@@ -139,7 +139,7 @@ export default function FanZone() {
                   { id: '2', name: 'Sideline 50yrd', active: false },
                   { id: '3', name: 'Coach Cam', active: false },
                   { id: '4', name: 'Tunnel View', active: false }
-                ].map((feed, i) => (
+                ].map((feed) => (
                    <div key={feed.id} className={`relative overflow-hidden rounded-2xl border ${feed.active ? 'border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-slate-800'} bg-slate-900 flex items-center justify-center aspect-video cursor-pointer hover:border-violet-400/50 transition group`}>
                       {/* Simulated Video Feed Gradient Animation */}
                       <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 opacity-80 mix-blend-overlay flex justify-center items-center">

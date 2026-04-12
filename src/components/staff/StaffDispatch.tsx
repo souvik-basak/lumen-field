@@ -16,7 +16,7 @@ interface DispatchTask {
 }
 
 export default function StaffDispatch() {
-  const { waitTimes, alerts } = useVenueStore();
+  const { waitTimes } = useVenueStore();
   
   // Initialize mock tasks based on current wait times state
   const [tasks, setTasks] = useState<DispatchTask[]>(() => {
@@ -26,7 +26,7 @@ export default function StaffDispatch() {
         id: `task-${w.id}-${i}`,
         title: w.density === 'Critical' ? 'Severe Overcrowding' : 'Flow Congestion',
         location: w.name,
-        severity: w.density,
+        severity: w.density as 'High' | 'Critical',
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         status: w.density === 'Critical' ? 'open' : 'dispatched',
         assignee: w.density === 'Critical' ? undefined : 'Unit Alpha-3'

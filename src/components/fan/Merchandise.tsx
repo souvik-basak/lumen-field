@@ -6,7 +6,7 @@ import { MOCK_MERCH_ITEMS } from '../../services/mockVenueData';
 
 export default function Merchandise() {
   const { waitTimes, cart, addToCart, removeFromCart, clearCart } = useVenueStore();
-  const [activeTab, setActiveTab] = useState<'express' | 'locker'>('express');
+  const [activeTab, setActiveTab] = useState<'express' | 'locker' | 'in-seat'>('express');
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
