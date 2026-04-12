@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+Dockerfile
+nginx.conf
+deploy.sh
+README.md
+*.log
+.vscode
+.idea
+.DS_Store
