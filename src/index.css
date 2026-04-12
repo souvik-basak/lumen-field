@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ec4899; /* Pink-500 */
+  --color-primary-dark: #be185d; /* Pink-700 */
+  --color-secondary: #8b5cf6; /* Violet-500 */
+  --color-accent: #0ea5e9; /* Sky-500 */
+  --color-background-dark: #0f172a; /* Slate-900 */
+  --color-card-dark: #1e293b; /* Slate-800 */
+  --font-sans: "Inter", "Roboto", "Outfit", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background-dark text-slate-100 font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20;
+  }
+  .glass-dark {
+    @apply bg-slate-900/50 backdrop-blur-xl border border-white/10;
+  }
+  .hidden-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hidden-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
