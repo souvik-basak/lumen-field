@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export type WaitTime = {
   id: string;
   name: string;
-  type: 'gate' | 'exit' | 'food' | 'restroom' | 'parking' | 'merch';
+  type: 'gate' | 'exit' | 'food' | 'restroom' | 'parking' | 'merch' | 'transit';
   waitTimeMinutes: number;
   density: 'Low' | 'Medium' | 'High' | 'Critical';
 };
@@ -14,6 +14,12 @@ export type GameEvent = {
   description: string;
   timeToEventMinutes: number | null;
   isActive: boolean;
+};
+
+export type CommentaryEntry = {
+  time: string;
+  text: string;
+  type: 'goal' | 'incident' | 'system' | 'info';
 };
 
 export type Product = {
@@ -33,36 +39,121 @@ export type LiveScore = {
   teamB: string;
   scoreA: number;
   scoreB: number;
-  period: string; // e.g. "Q2", "Halftime"
-  clock: string;  // e.g. "14:07"
+  period: string; 
+  clock: string;  
 };
 
+export interface Stadium {
+  id: string;
+  name: string;
+  city: string;
+  lat: number;
+  lng: number;
+  vendors: string[];
+  videoIds: string[];
+  transit: {
+    name: string;
+    line: string;
+    nearestStation: string;
+  };
+  parking: {
+    totalSpots: number;
+    sections: string[];
+  };
+  capacity: number;
+}
+
 interface VenueState {
+  activeStadiumId: string | null;
+  matchStatus: 'warmup' | 'live' | 'halftime' | 'finished';
+  matchMinute: number;
   waitTimes: WaitTime[];
   gameEvents: GameEvent[];
   alerts: string[];
   liveScore: LiveScore;
+  matchCommentary: CommentaryEntry[];
   cart: CartItem[];
+  
+  sosActive: boolean;
+  sosType: 'Medical' | 'Security' | null;
+  sosStatus: 'Dispatching' | 'Dispatched' | 'On-Site' | 'Resolved' | null;
+  
+  transitPassBalance: number;
+  carLocation: { section: string; level: string } | null;
+  
+  setStadium: (id: string) => void;
   setWaitTimes: (waitTimes: WaitTime[]) => void;
   setGameEvents: (events: GameEvent[]) => void;
   addAlert: (alert: string) => void;
   setLiveScore: (score: LiveScore | ((prev: LiveScore) => LiveScore)) => void;
+  setMatchStatus: (status: VenueState['matchStatus']) => void;
+  setMatchMinute: (min: number) => void;
+  addCommentary: (entry: CommentaryEntry) => void;
+  resetMatch: () => void;
+  resolveZoneCongestion: (zoneId: string) => void;
+  
+  triggerSOS: (type: 'Medical' | 'Security') => void;
+  setSOSStatus: (status: VenueState['sosStatus']) => void;
+  cancelSOS: () => void;
+  
+  topUpPass: (amount: number) => void;
+  setCarLocation: (location: { section: string; level: string } | null) => void;
+  
   addToCart: (item: Product) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
 }
 
 export const useVenueStore = create<VenueState>((set) => ({
+  activeStadiumId: null,
+  matchStatus: 'warmup',
+  matchMinute: 0,
   waitTimes: [],
   gameEvents: [],
   alerts: [],
   cart: [],
-  liveScore: { teamA: 'Eagles', teamB: 'Falcons', scoreA: 14, scoreB: 7, period: 'Q2', clock: '14:07' },
+  matchCommentary: [],
+  liveScore: { teamA: 'Home', teamB: 'Away', scoreA: 0, scoreB: 0, period: 'Warmup', clock: '00:00' },
+  sosActive: false,
+  sosType: null,
+  sosStatus: null,
+  transitPassBalance: 450, // Initial balance
+  carLocation: null,
   
+  setStadium: (id) => set({ activeStadiumId: id }),
   setWaitTimes: (waitTimes) => set({ waitTimes }),
   setGameEvents: (gameEvents) => set({ gameEvents }),
   addAlert: (alert) => set((state) => ({ alerts: [alert, ...state.alerts].slice(0, 10) })),
+  setMatchStatus: (matchStatus) => set({ matchStatus }),
+  setMatchMinute: (matchMinute) => set({ matchMinute }),
+  addCommentary: (entry) => set((state) => ({ matchCommentary: [entry, ...state.matchCommentary].slice(0, 50) })),
   
+  triggerSOS: (type) => set({ sosActive: true, sosType: type, sosStatus: 'Dispatching' }),
+  setSOSStatus: (status) => set({ sosStatus: status }),
+  cancelSOS: () => set({ sosActive: false, sosType: null, sosStatus: null }),
+  
+  topUpPass: (amount) => set((state) => ({ transitPassBalance: state.transitPassBalance + amount })),
+  setCarLocation: (location) => set({ carLocation: location }),
+  
+  resetMatch: () => set((state) => ({
+    matchStatus: 'warmup',
+    matchMinute: 0,
+    liveScore: { ...state.liveScore, scoreA: 0, scoreB: 0, clock: '00:00', period: 'Warmup' },
+    matchCommentary: [],
+    alerts: [],
+    sosActive: false,
+    sosType: null,
+    sosStatus: null,
+  })),
+
+  resolveZoneCongestion: (zoneId) => set((state) => ({
+    waitTimes: state.waitTimes.map((w) => 
+      w.id === zoneId 
+        ? { ...w, waitTimeMinutes: Math.floor(w.waitTimeMinutes * 0.3), density: 'Low' }
+        : w
+    )
+  })),
+
   setLiveScore: (updater) => set((state) => ({
     liveScore: typeof updater === 'function' ? updater(state.liveScore) : updater
   })),

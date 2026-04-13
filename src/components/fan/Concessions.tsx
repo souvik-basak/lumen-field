@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
 import { Clock, Search, ShoppingBag, Plus, Minus, Check, MapPin } from 'lucide-react';
-import { MOCK_MENU_ITEMS } from '../../services/mockVenueData';
+import { STADIUM_REGISTRY } from '../../services/mockVenueData';
 
 export default function Concessions() {
-  const { waitTimes, gameEvents, cart, addToCart, removeFromCart, clearCart } = useVenueStore();
+  const { waitTimes, gameEvents, cart, addToCart, removeFromCart, clearCart, activeStadiumId } = useVenueStore();
   const [activeTab, setActiveTab] = useState<'express' | 'locker' | 'in-seat'>('express');
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const stadium = activeStadiumId ? STADIUM_REGISTRY[activeStadiumId] : STADIUM_REGISTRY['city_kolkata'];
+  const menuItems = stadium.menu;
   
   const upcomingEvent = gameEvents.find(e => e.timeToEventMinutes !== null && e.timeToEventMinutes > 0);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -16,7 +19,10 @@ export default function Concessions() {
   return (
     <div className="p-4 md:p-8 pt-6 space-y-6 pb-20 max-w-7xl mx-auto hidden-scrollbar">
       <div className="flex justify-between items-center mb-2 md:mb-6">
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight">Food & Drinks</h2>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight">Food & Drinks</h2>
+          <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">{stadium.name} Concessions</p>
+        </div>
         <button 
           onClick={() => setIsCartOpen(true)}
           className="relative glass p-2 md:p-3 rounded-full hover:bg-white/20 transition active:scale-95 md:hidden"
@@ -39,7 +45,7 @@ export default function Concessions() {
             </div>
             <input 
               type="text" 
-              placeholder="Search burgers, beer, vegan..." 
+              placeholder="Search kati rolls, vada pav, chai..." 
               className="w-full glass py-3.5 md:py-4 pl-11 pr-4 rounded-2xl font-medium text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50 bg-slate-800/50 placeholder:text-slate-500"
             />
           </div>
@@ -77,8 +83,8 @@ export default function Concessions() {
                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-pink-500/10 border border-pink-500/20 rounded-2xl p-4 flex gap-4 items-center">
                  <div className="p-3 bg-pink-500/20 rounded-full text-pink-400"><MapPin size={24} /></div>
                  <div>
-                   <p className="font-bold text-pink-400 text-sm">Delivering to Sec 104 • Row N • Seat 12</p>
-                   <p className="text-xs text-slate-400 mt-0.5">A runner will bring your order directly to your seat. $4.99 fee applies.</p>
+                   <p className="font-bold text-pink-400 text-sm">Delivering to Block B • Row 4 • Seat 12</p>
+                   <p className="text-xs text-slate-400 mt-0.5">A runner will bring your order directly to your seat. ₹50 fee applies.</p>
                  </div>
                </motion.div>
             )}
@@ -94,16 +100,16 @@ export default function Concessions() {
               <Clock size={24} className="text-pink-400 shrink-0" />
               <div>
                 <p className="text-xs md:text-sm font-black text-white uppercase tracking-wider">Schedule Pickup</p>
-                <p className="text-xs md:text-sm font-medium text-slate-300 mt-0.5 md:mt-1 leading-relaxed">Order now, pick up exactly at {upcomingEvent.title} ({upcomingEvent.timeToEventMinutes}m) avoiding the rush.</p>
+                <p className="text-xs md:text-sm font-medium text-slate-300 mt-0.5 md:mt-1 leading-relaxed">Order now, pick up exactly during {upcomingEvent.title} ({upcomingEvent.timeToEventMinutes}m) avoiding the rush.</p>
               </div>
             </motion.div>
           )}
 
           {/* Vendors List & Menu Items */}
           <div>
-            <h3 className="font-black mb-4 md:text-lg text-slate-300 tracking-tight">Classic Stadium Bites</h3>
+            <h3 className="font-black mb-4 md:text-lg text-slate-300 tracking-tight">Match Day Specialties</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              {MOCK_MENU_ITEMS.map((item, i) => {
+              {menuItems.map((item, i) => {
                  const vendor = waitTimes.find(v => v.id === item.vendorId);
                  return (
                   <motion.div 
@@ -114,12 +120,12 @@ export default function Concessions() {
                     className="glass p-3 md:p-4 rounded-2xl border border-white/5 flex gap-4 items-center hover:bg-white/5 transition-colors"
                   >
                     <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-800 rounded-xl shrink-0 flex items-center justify-center text-3xl shadow-inner">
-                      {item.category === 'Drink' ? '🍺' : item.name.includes('Dog') ? '🌭' : '🍔'}
+                      {item.category === 'Drink' ? '☕' : item.name.includes('Roll') ? '🌯' : '🥪'}
                     </div>
                     <div className="flex-1 py-1">
                       <h4 className="font-bold text-sm md:text-base text-white">{item.name}</h4>
                       <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center mt-1 md:mt-2 gap-1">
-                        <span className="text-xs md:text-sm font-black text-slate-300">${item.price.toFixed(2)}</span>
+                        <span className="text-xs md:text-sm font-black text-slate-300">₹{item.price}</span>
                         {vendor && (
                           <span className={`text-[9px] w-max font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
                             vendor.density === 'Low' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -185,7 +191,7 @@ export default function Concessions() {
 }
 
 function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart, clearCart, closeCart, activeTab }: any) {
-  const deliveryFee = activeTab === 'in-seat' ? 4.99 : 0;
+  const deliveryFee = activeTab === 'in-seat' ? 50 : 0;
   const finalTotal = cartTotal + (cartItemCount > 0 ? deliveryFee : 0);
 
   return (
@@ -210,7 +216,7 @@ function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart
                 <h4 className="font-bold text-sm truncate max-w-[140px] md:max-w-[180px]">{item.name}</h4>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">{item.category}</span>
-                  <span className="text-xs font-bold text-slate-400">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="text-xs font-bold text-slate-400">₹{item.price * item.quantity}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-900 rounded-lg p-1 border border-slate-700">
@@ -227,12 +233,12 @@ function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart
         {deliveryFee > 0 && cartItemCount > 0 && (
           <div className="flex justify-between items-center mb-2 text-sm text-pink-400 font-medium">
              <span>In-Seat Delivery</span>
-             <span>${deliveryFee.toFixed(2)}</span>
+             <span>₹{deliveryFee}</span>
           </div>
         )}
         <div className="flex justify-between items-center mb-4 text-lg">
           <span className="font-bold text-slate-400">Total</span>
-          <span className="font-black text-white">${finalTotal.toFixed(2)}</span>
+          <span className="font-black text-white">₹{finalTotal}</span>
         </div>
         <button 
           disabled={cartItemCount === 0}

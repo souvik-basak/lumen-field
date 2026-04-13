@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Activity, Camera, PlayCircle, BarChart3, Star, ThumbsUp } from 'lucide-react';
 import { useVenueStore } from '../../store/useVenueStore';
+import { STADIUM_REGISTRY } from '../../services/mockVenueData';
 
 export default function FanZone() {
-  const { liveScore } = useVenueStore();
+  const { liveScore, activeStadiumId } = useVenueStore();
   const [decibel, setDecibel] = useState(85);
   const [pollVoted, setPollVoted] = useState<string | null>(null);
+
+  const stadium = activeStadiumId ? STADIUM_REGISTRY[activeStadiumId] : STADIUM_REGISTRY['city_kolkata'];
 
   useEffect(() => {
     // Animate decibel meter
@@ -16,8 +19,15 @@ export default function FanZone() {
     return () => clearInterval(interval);
   }, []);
 
+  const videoFeeds = [
+    { id: stadium.videoIds[0], name: `${stadium.name} Drone`, active: true },
+    { id: stadium.videoIds[1] || 'aqz-KE-bpKQ', name: 'Crowd View', active: false },
+    { id: stadium.videoIds[2] || 'vK9vV8H-rQo', name: 'Pitch Side', active: false },
+    { id: stadium.videoIds[3] || 'i-Qp7ZpA_6g', name: 'Dugout Cam', active: false }
+  ];
+
   return (
-    <div className="p-4 md:p-8 pt-6 space-y-6 md:space-y-8 max-w-7xl mx-auto pb-24 hidden-scrollbar">
+    <div className="p-4 md:p-8 pt-6 space-y-6 md:space-y-8 max-w-7xl mx-auto pb-24 hidden-scrollbar text-slate-100">
       
       {/* Header & Loyalty Status */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-4 md:mb-6">
@@ -25,7 +35,7 @@ export default function FanZone() {
           <h2 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
              <Trophy className="text-yellow-400" size={28} /> Fan Zone
           </h2>
-          <p className="text-sm font-bold text-slate-400 mt-1">Interactive Match Day Experience</p>
+          <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">{stadium.name} Experience</p>
         </div>
         
         <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-3 rounded-2xl flex items-center gap-4">
@@ -81,14 +91,14 @@ export default function FanZone() {
                 <span className="animate-pulse bg-red-500 text-white text-[9px] px-2 py-0.5 rounded uppercase tracking-widest font-bold border border-red-400">Live</span>
              </div>
              
-             <h4 className="text-xl font-bold text-white mb-4">What will {liveScore.teamA} do on this 3rd down?</h4>
+             <h4 className="text-xl font-bold text-white mb-4">What will happen in the next 5 minutes?</h4>
              
              <div className="space-y-3">
-               {[
-                 { id: 'pass', label: 'Deep Pass', percent: 65 },
-                 { id: 'run', label: 'Run up middle', percent: 25 },
-                 { id: 'screen', label: 'Screen Pass', percent: 10 }
-               ].map(opt => (
+                {[
+                  { id: 'goal', label: 'Goal Scored', percent: 15 },
+                  { id: 'corner', label: 'Corner Kick', percent: 45 },
+                  { id: 'yellow', label: 'Yellow Card', percent: 40 }
+                ].map(opt => (
                  <button 
                    key={opt.id}
                    onClick={() => setPollVoted(opt.id)}
@@ -134,27 +144,29 @@ export default function FanZone() {
              </div>
 
              <div className="grid grid-cols-2 gap-2 flex-1 relative p-2">
-                {[
-                  { id: '1', name: 'Endzone Cam A', active: true },
-                  { id: '2', name: 'Sideline 50yrd', active: false },
-                  { id: '3', name: 'Coach Cam', active: false },
-                  { id: '4', name: 'Tunnel View', active: false }
-                ].map((feed) => (
-                   <div key={feed.id} className={`relative overflow-hidden rounded-2xl border ${feed.active ? 'border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-slate-800'} bg-slate-900 flex items-center justify-center aspect-video cursor-pointer hover:border-violet-400/50 transition group`}>
-                      {/* Simulated Video Feed Gradient Animation */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 opacity-80 mix-blend-overlay flex justify-center items-center">
-                        <PlayCircle size={40} className={`opacity-20 group-hover:opacity-60 transition ${feed.active ? 'text-violet-500 opacity-60' : 'text-white'}`} strokeWidth={1} />
-                      </div>
-                      
-                      {/* Scanlines effect */}
-                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjIiIGZpbGw9InJnYmEoMCwwLDAsMC4xKSIvPjwvc3ZnPg==')] opacity-50 pointer-events-none"></div>
+                 {videoFeeds.map((feed, idx) => (
+                    <div key={feed.id} className={`relative overflow-hidden rounded-2xl border ${feed.active ? 'border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-slate-800'} bg-black flex items-center justify-center aspect-video cursor-pointer hover:border-violet-400/50 transition group`}>
+                       <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
+                         <iframe 
+                           className="w-full h-full scale-[1.3] pointer-events-none"
+                           src={`https://www.youtube.com/embed/${feed.id}?autoplay=1&mute=1&loop=1&playlist=${feed.id}&controls=0&modestbranding=1&rel=0`}
+                           title={feed.name}
+                           frameBorder="0"
+                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                         ></iframe>
+                       </div>
+                       
+                       {/* Overlay UI */}
+                       <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-transparent transition duration-500 z-10 flex items-center justify-center">
+                          <PlayCircle size={40} className={`opacity-20 group-hover:opacity-100 transition ${feed.active ? 'text-violet-500 opacity-80' : 'text-white'}`} strokeWidth={1} />
+                       </div>
 
-                      <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                         {feed.active && <span className="animate-pulse w-1.5 h-1.5 rounded-full bg-red-500"></span>}
-                         <span className="text-[9px] uppercase tracking-widest font-bold text-white/70 bg-black/40 px-1.5 py-0.5 rounded backdrop-blur">{feed.name}</span>
-                      </div>
-                   </div>
-                ))}
+                       <div className="absolute top-2 left-2 flex items-center gap-1.5 z-20">
+                          {feed.active && <span className="animate-pulse w-1.5 h-1.5 rounded-full bg-red-500"></span>}
+                          <span className="text-[9px] uppercase tracking-widest font-bold text-white/90 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur border border-white/5">{feed.name}</span>
+                       </div>
+                    </div>
+                 ))}
              </div>
              
              <div className="p-4 bg-slate-900/50 m-2 rounded-2xl flex items-center justify-between border border-slate-800">
@@ -163,8 +175,8 @@ export default function FanZone() {
                      <PlayCircle size={20} />
                    </div>
                    <div>
-                     <p className="font-bold text-sm text-white">Instant Replay Available</p>
-                     <p className="text-xs text-slate-400 font-medium">Q2 14:07 - Touchdown confirmed</p>
+                     <p className="font-bold text-sm text-white">VAR Check: Goal Valid</p>
+                     <p className="text-xs text-slate-400 font-medium">82:45 min - Goal confirmed</p>
                    </div>
                 </div>
                 <button className="bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-md">

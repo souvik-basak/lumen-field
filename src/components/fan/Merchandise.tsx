@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
 import { Search, ShoppingBag, Plus, Minus, Check, Shirt } from 'lucide-react';
-import { MOCK_MERCH_ITEMS } from '../../services/mockVenueData';
+import { STADIUM_REGISTRY } from '../../services/mockVenueData';
 
 export default function Merchandise() {
-  const { waitTimes, cart, addToCart, removeFromCart, clearCart } = useVenueStore();
+  const { waitTimes, cart, addToCart, removeFromCart, clearCart, activeStadiumId } = useVenueStore();
   const [activeTab, setActiveTab] = useState<'express' | 'locker' | 'in-seat'>('express');
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const stadium = activeStadiumId ? STADIUM_REGISTRY[activeStadiumId] : STADIUM_REGISTRY['city_kolkata'];
+  const merchItems = stadium.merch;
   
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -15,9 +18,12 @@ export default function Merchandise() {
   return (
     <div className="p-4 md:p-8 pt-6 space-y-6 pb-20 max-w-7xl mx-auto hidden-scrollbar">
       <div className="flex justify-between items-center mb-2 md:mb-6">
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-          <Shirt className="text-emerald-400" size={28} /> Team Store
-        </h2>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+            <Shirt className="text-emerald-400" size={28} /> Team Store
+          </h2>
+          <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">{stadium.name} Official Merch</p>
+        </div>
         <button 
           onClick={() => setIsCartOpen(true)}
           className="relative glass p-2 md:p-3 rounded-full hover:bg-white/20 transition active:scale-95 md:hidden"
@@ -78,7 +84,7 @@ export default function Merchandise() {
                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-pink-500/10 border border-pink-500/20 rounded-2xl p-4 flex gap-4 items-center">
                  <div className="p-3 bg-pink-500/20 rounded-full text-pink-400">👕</div>
                  <div>
-                   <p className="font-bold text-pink-400 text-sm">Delivering to Sec 104 • Row N • Seat 12</p>
+                   <p className="font-bold text-pink-400 text-sm">Delivering to Block B • Row 4 • Seat 12</p>
                    <p className="text-xs text-slate-400 mt-0.5">Your merch will be brought directly to your seat by a runner.</p>
                  </div>
                </motion.div>
@@ -89,7 +95,7 @@ export default function Merchandise() {
           <div>
             <h3 className="font-black mb-4 md:text-lg text-slate-300 tracking-tight">Game Day Exclusives</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              {MOCK_MERCH_ITEMS.map((item, i) => {
+              {merchItems.map((item, i) => {
                  const vendor = waitTimes.find(v => v.id === item.vendorId);
                  return (
                   <motion.div 
@@ -105,7 +111,7 @@ export default function Merchandise() {
                     <div className="flex-1 py-1">
                       <h4 className="font-bold text-sm md:text-base text-white">{item.name}</h4>
                       <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center mt-1 md:mt-2 gap-1">
-                        <span className="text-xs md:text-sm font-black text-slate-300">${item.price.toFixed(2)}</span>
+                        <span className="text-xs md:text-sm font-black text-slate-300">₹{item.price}</span>
                         {vendor && (
                           <span className={`text-[9px] w-max font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
                             vendor.density === 'Low' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -194,7 +200,7 @@ function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart
                 <h4 className="font-bold text-sm truncate max-w-[140px] md:max-w-[180px]">{item.name}</h4>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">{item.category}</span>
-                  <span className="text-xs font-bold text-slate-400">${(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="text-xs font-bold text-slate-400">₹{item.price * item.quantity}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-slate-900 rounded-lg p-1 border border-slate-700">
@@ -210,7 +216,7 @@ function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart
       <div className="pt-4 border-t border-slate-800 mt-auto pb-6 lg:pb-0">
         <div className="flex justify-between items-center mb-4 text-lg">
           <span className="font-bold text-slate-400">Total</span>
-          <span className="font-black text-white">${cartTotal.toFixed(2)}</span>
+          <span className="font-black text-white">₹{cartTotal}</span>
         </div>
         <button 
           disabled={cartItemCount === 0}

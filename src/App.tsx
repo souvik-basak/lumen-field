@@ -13,6 +13,7 @@ import SmartNavigation from './components/fan/SmartNavigation';
 import Concessions from './components/fan/Concessions';
 import Merchandise from './components/fan/Merchandise';
 import Parking from './components/fan/Parking';
+import Transit from './components/fan/Transit';
 import FanZone from './components/fan/FanZone';
 
 // Staff Views
@@ -38,6 +39,7 @@ function App() {
           <Route path="food" element={<Concessions />} />
           <Route path="merch" element={<Merchandise />} />
           <Route path="parking" element={<Parking />} />
+          <Route path="transit" element={<Transit />} />
           <Route path="zone" element={<FanZone />} />
         </Route>
 
