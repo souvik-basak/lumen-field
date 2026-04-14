@@ -4,7 +4,7 @@ import { Search, Navigation, Building2 } from 'lucide-react';
 import { useVenueStore } from '../../store/useVenueStore';
 
 const POPULAR_CITIES: { id: string; name: string; stadium: string; unavailable?: boolean }[] = [
-  { id: 'city_kolkata', name: 'Kolkata', stadium: 'Salt Lake Stadium' },
+  { id: 'city_kolkata', name: 'Kolkata', stadium: 'Lumen Field' },
   { id: 'city_mumbai', name: 'Mumbai', stadium: 'Mumbai Football Arena' },
   { id: 'city_bengaluru', name: 'Bengaluru', stadium: 'Kanteerava Stadium' },
   { id: 'city_delhi', name: 'Delhi', stadium: 'JLN Stadium' },

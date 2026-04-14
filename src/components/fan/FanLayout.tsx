@@ -23,7 +23,7 @@ export default function FanLayout() {
       <header className="md:hidden sticky top-0 z-50 glass-dark py-3 px-4 shadow-lg border-b border-white/5">
         <div className="flex justify-between items-center mb-1 border-b pb-2 border-white/10">
           <h1 className="text-xl font-black bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent">
-            {stadium?.name || 'Smart Venue'}
+            {stadium?.name || 'Lumen Field'}
           </h1>
           <div className="flex gap-2 items-center">
              <Link to="/staff" className="text-[10px] px-2 py-1 font-bold text-orange-400 rounded bg-orange-500/10 border border-orange-500/30">Go to Staff</Link>
@@ -49,7 +49,7 @@ export default function FanLayout() {
       <aside className="hidden md:flex w-64 glass-dark border-r border-white/5 flex-col flex-shrink-0 z-50">
         <div className="p-6 border-b border-white/5">
            <h1 className="text-3xl font-black bg-gradient-to-br from-pink-500 to-violet-500 bg-clip-text text-transparent tracking-tight leading-tight">
-             {stadium?.name || 'Smart Venue'}
+             {stadium?.name || 'Lumen Field'}
            </h1>
            <div className="mt-4 px-3 py-1.5 font-bold text-xs text-slate-300 rounded-lg bg-slate-800 border border-slate-700 inline-block">
               {stadium?.city || 'India'} • Premium Pass

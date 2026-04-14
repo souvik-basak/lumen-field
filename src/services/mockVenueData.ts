@@ -4,7 +4,7 @@ import type { WaitTime, Product, Stadium } from '../store/useVenueStore';
 export const STADIUM_REGISTRY: Record<string, Stadium & { initialWaitTimes: WaitTime[], menu: Product[], merch: Product[] }> = {
   'city_kolkata': {
     id: 'city_kolkata',
-    name: 'Salt Lake Stadium',
+    name: 'Lumen Field',
     city: 'Kolkata',
     lat: 22.5695,
     lng: 88.4094,
