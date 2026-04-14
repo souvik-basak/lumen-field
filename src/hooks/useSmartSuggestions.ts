@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useVenueStore, type WaitTime } from '../store/useVenueStore';
+import { useVenueStore } from '../store/useVenueStore';
 import { 
   Utensils, 
   MapPin, 

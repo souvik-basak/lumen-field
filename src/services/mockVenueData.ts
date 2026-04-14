@@ -1,5 +1,5 @@
 import { useVenueStore } from '../store/useVenueStore';
-import type { WaitTime, GameEvent, Product, Stadium, CommentaryEntry } from '../store/useVenueStore';
+import type { WaitTime, Product, Stadium } from '../store/useVenueStore';
 
 export const STADIUM_REGISTRY: Record<string, Stadium & { initialWaitTimes: WaitTime[], menu: Product[], merch: Product[] }> = {
   'city_kolkata': {

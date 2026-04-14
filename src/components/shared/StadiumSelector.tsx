@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, X, Navigation, Building2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, Navigation, Building2 } from 'lucide-react';
 import { useVenueStore } from '../../store/useVenueStore';
 
-const POPULAR_CITIES = [
+const POPULAR_CITIES: { id: string; name: string; stadium: string; unavailable?: boolean }[] = [
   { id: 'city_kolkata', name: 'Kolkata', stadium: 'Salt Lake Stadium' },
   { id: 'city_mumbai', name: 'Mumbai', stadium: 'Mumbai Football Arena' },
   { id: 'city_bengaluru', name: 'Bengaluru', stadium: 'Kanteerava Stadium' },

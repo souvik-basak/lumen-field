@@ -7,7 +7,6 @@ import {
   ChevronsUp, 
   Maximize2, 
   Shield, 
-  TrendingUp,
   MapPin,
   Bell,
   Stethoscope,
@@ -35,7 +34,6 @@ export default function OpsDashboard() {
     sosStatus, 
     activeStadiumId,
     setStadium,
-    setWaitTimes,
     addAlert
   } = useVenueStore();
 

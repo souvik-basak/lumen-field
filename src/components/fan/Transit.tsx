@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
 import { 
   Train, 
   MapPin, 
   CreditCard, 
   ChevronRight, 
-  Clock, 
   ArrowRight,
   TrendingUp,
   AlertCircle
@@ -15,11 +14,9 @@ import { STADIUM_REGISTRY } from '../../services/mockVenueData';
 
 export default function Transit() {
   const { waitTimes, activeStadiumId, matchMinute, transitPassBalance, topUpPass } = useVenueStore();
-  const [selectedStation, setSelectedStation] = useState<string | null>(null);
   const [isTapping, setIsTapping] = useState(false);
 
   const stadium = activeStadiumId ? STADIUM_REGISTRY[activeStadiumId] : STADIUM_REGISTRY['city_kolkata'];
-  const transitNodes = waitTimes.filter(w => w.type === 'transit');
   
   const containerVariants = {
     hidden: { opacity: 0 },

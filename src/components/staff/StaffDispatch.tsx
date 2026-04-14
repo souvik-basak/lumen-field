@@ -12,7 +12,6 @@ import {
   ChevronRight,
   AlertOctagon,
   Navigation,
-  Crosshair,
   Terminal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -37,12 +36,6 @@ interface CADLog {
   type: 'system' | 'dispatch' | 'resolve';
 }
 
-interface ResponderUnit {
-  id: string;
-  name: string;
-  type: 'security' | 'medical' | 'tactical';
-  status: 'idle' | 'dispatched';
-}
 
 export default function StaffDispatch() {
   const { 
@@ -57,13 +50,6 @@ export default function StaffDispatch() {
   
   const [localTasks, setLocalTasks] = useState<DispatchTask[]>([]);
   const [cadLogs, setCadLogs] = useState<CADLog[]>([]);
-  const [responders, setResponders] = useState<ResponderUnit[]>([
-    { id: 'u-1', name: 'Alpha-1 (Crowd Control)', type: 'security', status: 'idle' },
-    { id: 'u-2', name: 'Bravo-2 (Patrol)', type: 'security', status: 'idle' },
-    { id: 'u-3', name: 'Medic-Beta (EMT)', type: 'medical', status: 'idle' },
-    { id: 'u-4', name: 'Tac-Command', type: 'tactical', status: 'idle' }
-  ]);
-
   const pushLog = (message: string, type: 'system' | 'dispatch' | 'resolve') => {
     setCadLogs(prev => [...prev, {
       id: Date.now().toString() + Math.random(),
@@ -158,19 +144,9 @@ export default function StaffDispatch() {
       }));
     }
 
-    // Mark unit as dispatched or idle in roster if assignedUnit is a precise ID
-    if (assignedUnit) {
-      setResponders(prev => prev.map(r => r.name === assignedUnit ? { ...r, status: newStatus === 'dispatched' ? 'dispatched' : 'idle' } : r));
-    }
+
   };
 
-  const assignSpecificUnit = (taskId: string, unitId: string) => {
-    const unit = responders.find(r => r.id === unitId);
-    if (!unit) return;
-    
-    // Assigning a unit natively dispatches them
-    handleAction(taskId, 'dispatched', unit.name);
-  };
 
   const openTasks = tasks.filter(t => t.status === 'open');
   const dispatchedTasks = tasks.filter(t => t.status === 'dispatched');
@@ -233,7 +209,7 @@ export default function StaffDispatch() {
           title="Units Deployed" 
           icon={<Activity className="text-amber-500" size={20} />}
           tasks={dispatchedTasks}
-          onAction={(id) => handleAction(id, 'resolved')}
+          onAction={(id: string) => handleAction(id, 'resolved')}
           actionLabel="Mark Scene Clear"
           activeColor="border-amber-500/30"
         />

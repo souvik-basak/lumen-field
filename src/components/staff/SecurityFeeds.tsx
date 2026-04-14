@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
 import { 
-  Camera, AlertTriangle, Users, Wifi, Maximize, ShieldCheck, 
-  Crosshair, Plane, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Expand, Shrink, LocateFixed 
+  Camera, AlertTriangle, Wifi, ShieldCheck, 
+  Crosshair, Plane, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Expand, Shrink 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { STADIUM_REGISTRY } from '../../services/mockVenueData';
@@ -16,7 +16,7 @@ const CAM_LABELS = [
 ];
 
 export default function SecurityFeeds() {
-  const { waitTimes, activeStadiumId, sosActive, sosStatus } = useVenueStore();
+  const { waitTimes, activeStadiumId, sosActive } = useVenueStore();
   const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
   const [activeFeeds, setActiveFeeds] = useState<any[]>([]);
 
