@@ -57,7 +57,7 @@ export default function SmartNavigation() {
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE'
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   });
 
   const getDensityColorRaw = (density: string) => {
