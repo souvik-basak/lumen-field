@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
 import { Clock, Search, ShoppingBag, Plus, Minus, Check, MapPin } from 'lucide-react';
 import { STADIUM_REGISTRY } from '../../services/mockVenueData';
+import { syncOrderToCloud } from '../../services/cloudSync';
 
 export default function Concessions() {
   const { waitTimes, gameEvents, cart, addToCart, removeFromCart, clearCart, activeStadiumId } = useVenueStore();
@@ -242,8 +243,16 @@ function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart
         </div>
         <button 
           disabled={cartItemCount === 0}
-          onClick={() => {
-            alert('Mock Order Placed!');
+          onClick={async () => {
+            const orderMetadata = {
+              items: cart,
+              total: finalTotal,
+              location: activeTab === 'in-seat' ? 'Block B, Row 4, Seat 12' : 'Express Pickup Lane 2',
+              stadiumId: activeStadiumId || 'city_kolkata',
+              customerName: useVenueStore.getState().user?.displayName || 'Fan'
+            };
+            
+            await syncOrderToCloud(orderMetadata);
             clearCart();
             closeCart();
           }}

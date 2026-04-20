@@ -1,12 +1,17 @@
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
-import { Clock, Navigation, AlertTriangle, QrCode, Train, Car } from 'lucide-react';
+import { Clock, Navigation, AlertTriangle, QrCode, Train, Car, Users, LogOut, Bell, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSmartSuggestions } from '../../hooks/useSmartSuggestions';
+import { firebaseAuth, type GoogleUser } from '../../services/firebaseAuthMock';
+import AuthWall from '../shared/AuthWall';
 
 export default function FanDashboard() {
-  const { gameEvents, waitTimes, liveScore, alerts } = useVenueStore();
+  const { gameEvents, waitTimes, liveScore, alerts, user } = useVenueStore();
   const suggestions = useSmartSuggestions();
+
+  // Auth handled globally by FanLayout / App
   
   const upcomingEvent = gameEvents.find(e => e.timeToEventMinutes !== null && e.timeToEventMinutes > 0);
   const criticalGates = waitTimes.filter(w => w.type === 'exit' && w.density === 'Critical');
@@ -164,29 +169,36 @@ export default function FanDashboard() {
         {/* Right Sidebar Area (Ticket) */}
         <div className="lg:col-span-4 flex flex-col">
           {/* Digital Ticket / Pass Entry */}
-          <motion.section variants={itemVariants} className="md:hidden lg:block bg-gradient-to-tr from-sky-600 via-violet-600 to-pink-600 rounded-[2rem] p-1 shadow-xl mb-6">
-            <div className="bg-slate-900/90 rounded-[1.8rem] backdrop-blur-md overflow-hidden relative">
-               <div className="absolute top-0 right-8 w-16 h-8 bg-sky-500/20 rounded-b-full blur-xl"></div>
-               <div className="p-5 md:p-8 flex justify-between items-center border-b border-white/10 border-dashed">
-                  <div>
-                    <h2 className="text-[10px] md:text-xs uppercase font-bold tracking-widest text-slate-400">Match Day Ticket</h2>
-                    <p className="text-xl md:text-2xl font-black mt-1 text-white">VIP Club Pass</p>
-                    <p className="text-sm font-semibold text-sky-400 mt-1">Gate 3 • Sec 104 • Row N • Seat 12</p>
-                  </div>
-                  <div className="w-12 h-12 md:w-20 md:h-20 bg-white rounded-lg md:rounded-2xl flex items-center justify-center p-1 cursor-pointer hover:scale-105 transition-transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)] shrink-0 ml-4">
-                    <QrCode className="text-black w-full h-full" />
-                  </div>
-               </div>
-               
-               <div className="bg-slate-800/50 p-4 md:p-6 py-3 md:py-4 flex justify-between items-center text-xs md:text-sm font-semibold text-slate-300">
-                 <span>Tap QR to enter VIP zone</span>
-                 <span className="text-pink-400 font-black uppercase tracking-wider">Ready</span>
-               </div>
-               
-               {/* Notched cutouts */}
-               <div className="w-6 md:w-8 h-6 md:h-8 rounded-full bg-slate-950 absolute -left-4 top-[50%] -mt-3 md:-mt-4 shadow-inner border-r border-slate-700/50"></div>
-               <div className="w-6 md:w-8 h-6 md:h-8 rounded-full bg-slate-950 absolute -right-4 top-[50%] -mt-3 md:-mt-4 shadow-inner border-l border-slate-700/50"></div>
-            </div>
+          <motion.section variants={itemVariants} className="md:hidden lg:block bg-gradient-to-tr from-sky-600 via-violet-600 to-pink-600 rounded-[2rem] p-1 shadow-xl mb-6 flex-shrink-0 min-h-[220px]">
+            <AuthWall 
+              title="Identity Required" 
+              description="Your digital VIP pass requires a verified account."
+              height="100%"
+              className="w-full h-full"
+            >
+              <div className="bg-slate-900/90 rounded-[1.8rem] backdrop-blur-md overflow-hidden relative w-full h-full min-h-[212px]">
+                 <div className="absolute top-0 right-8 w-16 h-8 bg-sky-500/20 rounded-b-full blur-xl"></div>
+                 <div className="p-8 pb-4 flex justify-between items-center border-b border-white/10 border-dashed">
+                    <div>
+                      <h2 className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Match Day Ticket</h2>
+                      <p className="text-2xl font-black mt-1 text-white">VIP Club Pass</p>
+                      <p className="text-[11px] font-semibold text-sky-400 mt-1">Gate 3 • Sec 104 • Row N • Seat 12</p>
+                    </div>
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-1 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                      <QrCode className="text-black w-full h-full" />
+                    </div>
+                 </div>
+                 
+                 <div className="bg-slate-800/50 p-6 py-4 flex justify-between items-center text-xs font-semibold text-slate-300">
+                   <span>Tap QR to enter VIP zone</span>
+                   <span className="text-pink-400 font-black uppercase tracking-wider">Ready</span>
+                 </div>
+                 
+                 {/* Notched cutouts */}
+                 <div className="w-8 h-8 rounded-full bg-slate-950 absolute -left-4 top-[124px] shadow-inner border-r border-slate-700/50"></div>
+                 <div className="w-8 h-8 rounded-full bg-slate-950 absolute -right-4 top-[124px] shadow-inner border-l border-slate-700/50"></div>
+              </div>
+            </AuthWall>
           </motion.section>
 
           {/* Live Commentary Log */}

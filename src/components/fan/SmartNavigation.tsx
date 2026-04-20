@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVenueStore } from '../../store/useVenueStore';
 import { Navigation2, Activity, ArrowRightCircle, Scan, MapPin as MapPinIcon } from 'lucide-react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { DirectionsService, DirectionsRenderer, GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { STADIUM_REGISTRY } from '../../services/mockVenueData';
@@ -51,14 +51,32 @@ export default function SmartNavigation() {
   const { waitTimes, activeStadiumId } = useVenueStore();
   const [arMode, setArMode] = useState(false);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
 
   const stadium = activeStadiumId ? STADIUM_REGISTRY[activeStadiumId] : STADIUM_REGISTRY['city_kolkata'];
   const STADIUM_CENTER = { lat: stadium.lat, lng: stadium.lng };
+  const USER_LOCATION = { lat: STADIUM_CENTER.lat - 0.0006, lng: STADIUM_CENTER.lng - 0.0008 };
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   });
+
+  const directionsCallback = (
+    result: google.maps.DirectionsResult | null,
+    status: google.maps.DirectionsStatus
+  ) => {
+    if (result !== null && status === 'OK') {
+      setDirections(result);
+    } else if (status !== 'OK') {
+      console.error(`[Maps] Directions request failed: ${status}`);
+    }
+  };
+
+  useEffect(() => {
+    // Clear directions whenever selectedNode changes to fetch a fresh route
+    setDirections(null);
+  }, [selectedNode]);
 
   const getDensityColorRaw = (density: string) => {
     switch(density) {
@@ -71,7 +89,7 @@ export default function SmartNavigation() {
   };
 
   return (
-    <div className="p-4 md:p-8 pt-6 space-y-6 md:space-y-8 max-w-7xl mx-auto pb-24">
+    <div className="p-4 md:p-8 pt-6 space-y-6 md:space-y-8 max-w-7xl mx-auto pb-24" role="region" aria-label="Venue Navigation">
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <div>
            <h2 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">Interactive Map</h2>
@@ -80,9 +98,11 @@ export default function SmartNavigation() {
         <div className="flex gap-2">
           <button 
             onClick={() => setArMode(!arMode)}
+            aria-label={arMode ? 'Switch to 2D Map View' : 'Switch to AR Lens View'}
+            aria-pressed={arMode}
             className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-bold tracking-wider uppercase flex items-center gap-2 border transition ${arMode ? 'bg-sky-500/20 text-sky-400 border-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.3)]' : 'glass border-white/10 hover:bg-white/10'}`}
           >
-            <Scan size={16} className={arMode ? 'text-sky-400' : 'text-slate-400'} /> AR Lens
+            <Scan size={16} className={arMode ? 'text-sky-400' : 'text-slate-400'} aria-hidden="true" /> AR Lens
           </button>
         </div>
       </div>
@@ -100,6 +120,8 @@ export default function SmartNavigation() {
                   exit={{ opacity: 0, scale: 1.05 }}
                   transition={{ duration: 0.3 }}
                   className="absolute inset-0 bg-slate-950"
+                  role="application"
+                  aria-label="Google Maps Stadium View"
                 >
                   {isLoaded ? (
                     <GoogleMap
@@ -108,6 +130,32 @@ export default function SmartNavigation() {
                       zoom={16}
                       options={mapOptions}
                     >
+                      {selectedNode && (
+                        <DirectionsService
+                          key={selectedNode}
+                          options={{
+                            origin: USER_LOCATION,
+                            destination: getNodePosition(STADIUM_CENTER, selectedNode),
+                            travelMode: google.maps.TravelMode.WALKING,
+                          }}
+                          callback={directionsCallback}
+                        />
+                      )}
+
+                      {directions && (
+                        <DirectionsRenderer
+                          options={{
+                            directions: directions,
+                            suppressMarkers: true,
+                            preserveViewport: true,
+                            polylineOptions: {
+                              strokeColor: '#8b5cf6',
+                              strokeWeight: 5,
+                              strokeOpacity: 0.8,
+                            }
+                          }}
+                        />
+                      )}
                       {waitTimes.map((node) => {
                         const position = getNodePosition(STADIUM_CENTER, node.id);
                         if (!position) return null;
@@ -116,6 +164,7 @@ export default function SmartNavigation() {
                           <Marker
                             key={node.id}
                             position={position}
+                            title={`${node.name}: ${node.waitTimeMinutes}m wait`}
                             onClick={() => setSelectedNode(node.id)}
                             icon={{
                               path: google.maps.SymbolPath.CIRCLE,
@@ -134,7 +183,7 @@ export default function SmartNavigation() {
                           position={getNodePosition(STADIUM_CENTER, selectedNode)}
                           onCloseClick={() => setSelectedNode(null)}
                         >
-                          <div className="p-2 min-w-[120px]">
+                          <div className="p-2 min-w-[120px]" role="alert">
                             <h4 className="font-bold text-slate-900 text-sm">
                               {waitTimes.find(n => n.id === selectedNode)?.name}
                             </h4>
@@ -148,6 +197,7 @@ export default function SmartNavigation() {
                       {/* User Location Marker */}
                       <Marker 
                         position={{ lat: STADIUM_CENTER.lat - 0.0006, lng: STADIUM_CENTER.lng - 0.0008 }}
+                        title="Your current location"
                         icon={{
                           path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z',
                           fillColor: '#ec4899',
@@ -160,7 +210,7 @@ export default function SmartNavigation() {
                       />
                     </GoogleMap>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold bg-slate-900">
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold bg-slate-900" aria-live="polite">
                       Loading {stadium.name} Live Data...
                     </div>
                   )}

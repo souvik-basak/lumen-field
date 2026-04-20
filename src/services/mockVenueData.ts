@@ -1,10 +1,11 @@
 import { useVenueStore } from '../store/useVenueStore';
 import type { WaitTime, Product, Stadium } from '../store/useVenueStore';
+import { syncMatchStateToCloud } from './dataMigration';
 
 export const STADIUM_REGISTRY: Record<string, Stadium & { initialWaitTimes: WaitTime[], menu: Product[], merch: Product[] }> = {
   'city_kolkata': {
     id: 'city_kolkata',
-    name: 'Lumen Field',
+    name: 'Saltlake Stadium',
     city: 'Kolkata',
     lat: 22.5695,
     lng: 88.4094,
@@ -283,9 +284,39 @@ const MATCHES = [
 ];
 
 export const startMockVenueEngine = () => {
-  let scoreA = 0;
-  let scoreB = 0;
-  let currentMatch = MATCHES[0];
+  // Initialize states for all stadiums
+  const venueStates: Record<string, { 
+    scoreA: number, 
+    scoreB: number, 
+    matchMinute: number,
+    currentMatch: typeof MATCHES[0],
+    waitTimes: WaitTime[]
+  }> = {};
+
+  Object.keys(STADIUM_REGISTRY).forEach(id => {
+    const cityMatches = MATCHES.filter(m => m.city === id);
+    venueStates[id] = {
+      scoreA: 0,
+      scoreB: 0,
+      // Randomize starting minute to make it feel organic (0 to 90)
+      matchMinute: Math.floor(Math.random() * 90),
+      currentMatch: cityMatches[Math.floor(Math.random() * cityMatches.length)] || MATCHES[0],
+      waitTimes: [...STADIUM_REGISTRY[id].initialWaitTimes]
+    };
+  });
+
+  // Listen for reset signals from the UI
+  window.addEventListener('match-reset', (e: any) => {
+    const { stadiumId } = e.detail;
+    if (venueStates[stadiumId]) {
+      console.log(`[Engine] Resetting match for ${stadiumId}`);
+      venueStates[stadiumId].matchMinute = 0;
+      venueStates[stadiumId].scoreA = 0;
+      venueStates[stadiumId].scoreB = 0;
+    }
+  });
+
+  let ticksSinceLastBgSync = 0;
 
   const tick = () => {
     const { 
@@ -294,9 +325,7 @@ export const startMockVenueEngine = () => {
       setLiveScore, 
       setMatchStatus, 
       setMatchMinute,
-      matchMinute,
       addCommentary, 
-      matchStatus,
       addAlert,
       sosActive,
       sosType,
@@ -304,165 +333,109 @@ export const startMockVenueEngine = () => {
       setSOSStatus
     } = useVenueStore.getState();
     
-    if (!activeStadiumId) {
-      setTimeout(tick, 2000);
-      return;
-    }
-
-    const stadium = STADIUM_REGISTRY[activeStadiumId];
-    if (!stadium) {
-      setTimeout(tick, 2000);
-      return;
-    }
-
-    // Update current match teams based on city if not set
-    if (activeStadiumId !== currentMatch.city) {
-      const cityMatches = MATCHES.filter(m => m.city === activeStadiumId);
-      currentMatch = cityMatches[Math.floor(Math.random() * cityMatches.length)] || MATCHES[0];
-      setMatchMinute(0);
-      scoreA = 0;
-      scoreB = 0;
-      setMatchStatus('warmup');
-      useVenueStore.getState().resetMatch();
-      setTimeout(tick, 1000);
-      return;
-    }
-
-    const currentMin = matchMinute + 1;
-    setMatchMinute(currentMin);
-
-    // Match Status Logic
-    if (currentMin <= 0) {
-      setMatchStatus('warmup');
-    } else if (currentMin <= 45) {
-      setMatchStatus('live');
-    } else if (currentMin <= 60) {
-      setMatchStatus('halftime');
-    } else if (currentMin <= 105) {
-      setMatchStatus('live');
-    } else {
-      setMatchStatus('finished');
-      // No more ticks until reset
-      return; 
-    }
-
-    // Live Score & Clock Simulation
-    const clockMin = currentMin <= 45 ? currentMin : currentMin <= 60 ? 45 : currentMin - 15;
-    const displayClock = `${clockMin.toString().padStart(2, '0')}:00`;
-    const period = currentMin <= 45 ? '1st Half' : currentMin <= 60 ? 'Halftime' : '2nd Half';
-
-    // Random Goals with Variety
-    let goalAdded = false;
-    if (matchStatus === 'live') {
-      const goalScenarios = [
-        { msg: "GOAL! A powerful header from the corner kick!", type: 'header' },
-        { msg: "GOAL! A clinical finish into the bottom corner!", type: 'clinical' },
-        { msg: "GOAL! A absolute screamer from 30 yards out!", type: 'screamer' },
-        { msg: "GOAL! Penalty converted with absolute composure!", type: 'penalty' },
-        { msg: "GOAL! Deflecting off the keeper and tricking inside!", type: 'lucky' },
-        { msg: "GOAL! A brilliant solo run ends with a cheeky chip!", type: 'solo' },
-      ];
-
-      // Team A Goal
-      if (Math.random() > 0.982) {
-        scoreA++;
-        goalAdded = true;
-        const scenario = goalScenarios[Math.floor(Math.random() * goalScenarios.length)];
-        addCommentary({ 
-          time: `${clockMin}'`, 
-          text: `${scenario.msg} ${currentMatch.teamA} take control!`, 
-          type: 'goal' 
-        });
-      } 
-      // Team B Goal
-      else if (Math.random() > 0.985) {
-        scoreB++;
-        goalAdded = true;
-        const scenario = goalScenarios[Math.floor(Math.random() * goalScenarios.length)];
-        addCommentary({ 
-          time: `${clockMin}'`, 
-          text: `${scenario.msg} ${currentMatch.teamB} level things up!`, 
-          type: 'goal' 
-        });
-      }
-
-      // Random Incidents (Non-Goal)
-      if (Math.random() > 0.94 && !goalAdded) {
-        const incidents = [
-          '⚡ VAR Check: High foot in the box... No penalty awarded.',
-          '🧤 What a Save! The keeper tips it over the bar at full stretch!',
-          '🟨 Yellow Card: Tactical foul to stop a dangerous counter-attack.',
-          '⛳ Corner Kick: The crowd is roaring for a set-piece breakthrough!',
-          '🔄 Substitution: Tactical change to shore up the defense.',
-          '🏟️ Atmosphere Check: The home fans are making an incredible noise!',
-          '🛑 Foul: A rough challenge in the midfield stops the play.',
-          '🎯 Woodwork! The shot thumps against the crossbar!',
-        ];
-        addCommentary({ 
-          time: `${clockMin}'`, 
-          text: incidents[Math.floor(Math.random() * incidents.length)], 
-          type: 'info' 
-        });
-      }
-    }
-
-    setLiveScore({
-      teamA: currentMatch.teamA,
-      teamB: currentMatch.teamB,
-      scoreA,
-      scoreB,
-      clock: displayClock,
-      period
-    });
-
-    // Animate Wait Times slightly and update Density
-    const newWaitTimes = stadium.initialWaitTimes.map(wt => {
-      const minutes = Math.max(2, wt.waitTimeMinutes + Math.floor(Math.random() * 5) - 2);
-      let density: WaitTime['density'] = 'Low';
-      if (minutes > 30) density = 'Critical';
-      else if (minutes > 20) density = 'High';
-      else if (minutes > 10) density = 'Medium';
+    // Process ALL venues
+    Object.keys(STADIUM_REGISTRY).forEach(id => {
+      const state = venueStates[id];
+      const stadium = STADIUM_REGISTRY[id];
       
-      return { ...wt, waitTimeMinutes: minutes, density };
+      state.matchMinute++;
+      const currentMin = state.matchMinute;
+
+      // Match Status & Clock logic (simplified for global loop)
+      let currentStatus: 'warmup' | 'live' | 'halftime' | 'finished' = 'live';
+      if (currentMin <= 0) currentStatus = 'warmup';
+      else if (currentMin > 45 && currentMin <= 60) currentStatus = 'halftime';
+      else if (currentMin > 105) {
+        currentStatus = 'finished';
+        // Auto-cycle after being finished for 5 ticks (20 seconds)
+        if (currentMin > 110) {
+           state.matchMinute = -5; // Start warmup soon
+           state.scoreA = 0;
+           state.scoreB = 0;
+        }
+      }
+
+      const clockMin = currentMin <= 45 ? currentMin : currentMin <= 60 ? 45 : Math.min(90, currentMin - 15);
+      const displayClock = `${clockMin.toString().padStart(2, '0')}:00`;
+      const period = currentMin <= 45 ? '1st Half' : currentMin <= 60 ? 'Halftime' : '2nd Half';
+
+      // Random Goals
+      let goalAdded = false;
+      if (currentStatus === 'live') {
+        if (Math.random() > 0.99) {
+          state.scoreA++;
+          goalAdded = true;
+          if (id === activeStadiumId) {
+            addCommentary({ time: `${clockMin}'`, text: `GOAL! ${state.currentMatch.teamA} score at ${stadium.name}!`, type: 'goal' });
+            addAlert(`🚨 GOAL at ${stadium.name}! ${state.scoreA} - ${state.scoreB}`);
+          }
+        } else if (Math.random() > 0.992) {
+          state.scoreB++;
+          goalAdded = true;
+          if (id === activeStadiumId) {
+            addCommentary({ time: `${clockMin}'`, text: `GOAL! ${state.currentMatch.teamB} level up at ${stadium.name}!`, type: 'goal' });
+            addAlert(`🚨 GOAL at ${stadium.name}! ${state.scoreA} - ${state.scoreB}`);
+          }
+        }
+      }
+
+      // Update Wait Times
+      state.waitTimes = state.waitTimes.map(wt => {
+        const minutes = Math.max(2, wt.waitTimeMinutes + Math.floor(Math.random() * 3) - 1);
+        let density: WaitTime['density'] = 'Low';
+        if (minutes > 30) density = 'Critical';
+        else if (minutes > 20) density = 'High';
+        else if (minutes > 10) density = 'Medium';
+        return { ...wt, waitTimeMinutes: minutes, density };
+      });
+
+      // SYNC TO CLOUD (Everyone gets the update)
+      // THRIFTY SYNC: Only sync active stadium every tick. 
+      // Sync background stadiums only once every 10 ticks (approx 80 seconds)
+      const isSyncDue = (id === activeStadiumId) || (ticksSinceLastBgSync >= 10);
+      
+      if (isSyncDue) {
+        syncMatchStateToCloud(id, {
+          liveScore: {
+            teamA: state.currentMatch.teamA,
+            teamB: state.currentMatch.teamB,
+            scoreA: state.scoreA,
+            scoreB: state.scoreB,
+            clock: displayClock,
+            period
+          },
+          waitTimes: state.waitTimes,
+          matchStatus: currentStatus
+        });
+      }
+
+      // If active, sync to local store for instant UI response
+      if (id === activeStadiumId) {
+         setMatchMinute(currentMin);
+         setMatchStatus(currentStatus);
+         setLiveScore({
+            teamA: state.currentMatch.teamA,
+            teamB: state.currentMatch.teamB,
+            scoreA: state.scoreA,
+            scoreB: state.scoreB,
+            clock: displayClock,
+            period
+         });
+         setWaitTimes(state.waitTimes);
+      }
     });
-    setWaitTimes(newWaitTimes);
 
-    // Push Match Alerts
-    if (goalAdded) {
-      addAlert(`🚨 GOAL! ${scoreA} - ${scoreB}. The stadium is erupting!`);
-    } else if (Math.random() > 0.97 && matchStatus === 'live') {
-      const liveAlerts = [
-          "⚠️ High congestion near Gate 1. Use Gate 3 for faster exit.",
-          "📢 VAR CHECK: Possible penalty for the home side!",
-          "🏟️ Record attendance announced: Full house today!",
-          "🍔 Flash Deal: 20% off all beverages for the next 5 minutes!"
-      ];
-      addAlert(liveAlerts[Math.floor(Math.random() * liveAlerts.length)]);
-    }
-
-    // SOS Command Center Simulation
+    // SOS Simulation (Only for active stadium for staff focus)
     if (sosActive && sosStatus === 'Dispatching') {
        if (Math.random() > 0.7) {
          setSOSStatus('Dispatched');
-         addCommentary({ 
-            time: `${clockMin}'`, 
-            text: `🔸 [SECURE] ${sosType} responders dispatched to VIP Section 104.`, 
-            type: 'system' 
-         });
-         addAlert(`🚨 Assistance En-route: Our ${sosType} team is moving to your position.`);
+         addAlert(`🚨 Responders Dispatched to your location.`);
        }
     }
-
-    // Dynamic Interval Calculation
-    // Goal: 10 mins total. 5 mins Halftime (300s), 5 mins Play (300s total for 90 game mins)
-    // Gameplay: 300s / 90 mins = 3.33s (3333ms)
-    // Halftime: 300s / 15 mins = 20s (20000ms)
-    const isActuallyHalftime = currentMin > 45 && currentMin <= 60;
-    const nextInterval = isActuallyHalftime ? 20000 : 3333;
     
-    setTimeout(tick, nextInterval);
+    ticksSinceLastBgSync = (ticksSinceLastBgSync + 1) % 11;
+    setTimeout(tick, 8000); // Slow down global tick to 8 seconds
   };
 
-  // Start the first tick
   setTimeout(tick, 1000);
 };

@@ -13,11 +13,16 @@ import {
   ShieldAlert,
   Send,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  ShoppingBag,
+  ChefHat,
+  Truck as TruckIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { STADIUM_REGISTRY } from '../../services/mockVenueData';
 import VenueMap from './VenueMap';
+import { resolveSOSInCloud, updateOrderStatusInCloud } from '../../services/cloudSync';
+import { seedStadiumsToCloud } from '../../services/dataMigration';
 
 import { useEffect, useState } from 'react';
 
@@ -32,9 +37,13 @@ export default function OpsDashboard() {
     sosActive, 
     sosType, 
     sosStatus, 
+    activeSosId,
     activeStadiumId,
     setStadium,
-    addAlert
+    addAlert,
+    cancelSOS,
+    orders,
+    updateOrderStatus
   } = useVenueStore();
 
   useEffect(() => {
@@ -84,6 +93,29 @@ export default function OpsDashboard() {
     setStadium(e.target.value);
   };
 
+  const handleResolveSOS = async () => {
+    if (activeSosId) {
+      const loadingToast = toast.loading('Syncing resolution to cloud...');
+      await resolveSOSInCloud(activeSosId);
+      cancelSOS();
+      toast.success('Incident Resolved & Synced', { id: loadingToast });
+      addAlert(`✅ ${sosType} emergency at SEC 104 has been resolved.`);
+    } else {
+      cancelSOS();
+      toast.success('Incident Cleared Locally');
+    }
+  };
+
+  const handleUpdateOrder = async (orderId: string, nextStatus: any) => {
+    const tid = toast.loading(`Updating order status to ${nextStatus}...`);
+    await updateOrderStatusInCloud(orderId, nextStatus);
+    updateOrderStatus(orderId, nextStatus);
+    toast.success(`Order ${nextStatus}`, { id: tid });
+    if (nextStatus === 'Dispatched') {
+      addAlert(`🚚 Dispatch: Order #${orderId.slice(-4)} is on its way!`);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-8">
       
@@ -119,6 +151,25 @@ export default function OpsDashboard() {
             </span>
             <span className="text-[10px] font-black tracking-widest text-slate-200 uppercase">Live Ops</span>
           </div>
+
+          <button 
+            onClick={async () => {
+              const tid = toast.loading('Migrating JSON to Cloud...');
+              try {
+                await seedStadiumsToCloud();
+                toast.success('Database Seeded Successfully', { id: tid });
+              } catch (e) {
+                toast.error('Migration Failed', { id: tid });
+              }
+            }}
+            className="group relative flex items-center justify-center w-10 h-10 bg-slate-800 hover:bg-sky-500 rounded-xl transition-all border border-slate-700 hover:border-sky-400 shadow-lg"
+            title="Seed Cloud Database"
+          >
+             <Activity size={18} className="text-slate-400 group-hover:text-white transition" />
+             <div className="absolute -top-12 scale-0 group-hover:scale-100 transition-transform bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-lg border border-white/10 whitespace-nowrap">
+                Migrate JSON to Live DB
+             </div>
+          </button>
         </div>
       </header>
 
@@ -144,8 +195,11 @@ export default function OpsDashboard() {
                       </div>
                    </div>
                    <div className="flex gap-3">
-                      <button className="bg-white text-red-600 px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-slate-100 transition shadow-lg">
-                        Manage Incident
+                      <button 
+                        onClick={handleResolveSOS}
+                        className="bg-white text-red-600 px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-slate-100 transition shadow-lg active:scale-95 translate-y-0"
+                      >
+                        Resolve & Clear
                       </button>
                    </div>
                 </div>
@@ -280,49 +334,78 @@ export default function OpsDashboard() {
                 ))}
               </AnimatePresence>
             </div>
-          </div>
-
-          {/* Resource Management */}
+              {/* Live Order Feed */}
           <div className="bg-slate-900 border border-white/5 rounded-[2.5rem] p-8 shadow-xl h-[400px] overflow-hidden flex flex-col">
-            <h3 className="text-xl font-black mb-6">Zone Interventions</h3>
+            <h3 className="text-xl font-black mb-6 flex items-center justify-between">
+              Live Orders
+              {orders.filter(o => o.status !== 'Delivered').length > 0 && (
+                <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">{orders.filter(o => o.status !== 'Delivered').length}</span>
+              )}
+            </h3>
             <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
               <AnimatePresence>
-                {criticalZones.length > 0 ? (
-                  criticalZones.map((zone) => (
+                {orders.length > 0 ? (
+                  orders.map((order) => (
                     <motion.div 
                       layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9, height: 0 }}
-                      key={zone.id} 
-                      className="bg-orange-500/10 border border-orange-500/30 p-5 rounded-3xl relative overflow-hidden group"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      key={order.id} 
+                      className="bg-slate-800/80 border border-white/5 p-4 rounded-2xl"
                     >
-                      <p className="text-xs font-black text-orange-400 uppercase tracking-widest mb-3">{zone.name}</p>
-                      <p className="text-lg font-black text-white mb-4">{zone.waitTimeMinutes}m Backlog</p>
-                      <button 
-                        onClick={() => handleZoneDivert(zone)}
-                        disabled={activeZoneAction === zone.id}
-                        className="w-full bg-gradient-to-b from-orange-500 to-orange-600 disabled:from-orange-600/50 disabled:to-orange-700/50 border border-orange-400/50 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all duration-200 shadow-[0_6px_20px_rgba(234,88,12,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] hover:shadow-[0_8px_25px_rgba(234,88,12,0.5),inset_0_1px_1px_rgba(255,255,255,0.4)] hover:brightness-110 active:scale-95 active:translate-y-0.5 active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] flex items-center justify-center h-10 select-none"
-                      >
-                        {activeZoneAction === zone.id ? (
-                           <Loader2 size={16} className="animate-spin text-white/70" />
-                        ) : 'Divert Flow'}
-                      </button>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Order #{order.id.slice(-4)}</p>
+                          <p className="font-bold text-white text-sm">{order.customerName || 'Fan'}</p>
+                        </div>
+                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${
+                          order.status === 'Pending' ? 'bg-amber-500/20 text-amber-500' :
+                          order.status === 'Preparing' ? 'bg-sky-500/20 text-sky-500' :
+                          'bg-emerald-500/20 text-emerald-500'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-medium mb-3">📍 {order.location}</p>
+                      
+                      <div className="flex gap-2">
+                         {order.status === 'Pending' && (
+                           <button 
+                             onClick={() => handleUpdateOrder(order.id, 'Preparing')}
+                             className="flex-1 bg-sky-600/20 hover:bg-sky-600/40 text-sky-400 text-[10px] font-black uppercase py-2 rounded-lg border border-sky-500/30 transition flex items-center justify-center gap-1"
+                           >
+                             <ChefHat size={12} /> Prepare
+                           </button>
+                         )}
+                         {order.status === 'Preparing' && (
+                           <button 
+                             onClick={() => handleUpdateOrder(order.id, 'Dispatched')}
+                             className="flex-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 text-[10px] font-black uppercase py-2 rounded-lg border border-emerald-500/30 transition flex items-center justify-center gap-1"
+                           >
+                             <TruckIcon size={12} /> Dispatch
+                           </button>
+                         )}
+                         {order.status === 'Dispatched' && (
+                           <button 
+                             onClick={() => handleUpdateOrder(order.id, 'Delivered')}
+                             className="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-[10px] font-black uppercase py-2 rounded-lg border border-slate-600 transition flex items-center justify-center gap-1"
+                           >
+                             <CheckCircle size={12} /> Delivered
+                           </button>
+                         )}
+                      </div>
                     </motion.div>
                   ))
                 ) : (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-col items-center justify-center p-6 text-center h-full opacity-50"
-                  >
-                    <Shield size={64} className="text-slate-700 mb-4" />
-                    <p className="text-slate-500 font-bold text-sm">Venue Sectors Normalized</p>
-                  </motion.div>
+                  <div className="flex flex-col items-center justify-center p-6 text-center h-full opacity-50">
+                    <ShoppingBag size={48} className="text-slate-700 mb-4" />
+                    <p className="text-slate-500 font-bold text-sm">No active orders</p>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
           </div>
+       </div>
         </div>
 
       </div>

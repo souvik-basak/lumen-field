@@ -11,13 +11,27 @@ import {
     AlertTriangle
 } from 'lucide-react';
 import { useVenueStore } from '../../store/useVenueStore';
+import { syncSOSToCloud } from '../../services/cloudSync';
 
 export default function SOSSystem() {
-  const { sosActive, sosType, sosStatus, triggerSOS, cancelSOS } = useVenueStore();
+  const { sosActive, sosType, sosStatus, triggerSOS, cancelSOS, activeStadiumId } = useVenueStore();
   const [showModal, setShowModal] = useState(false);
   const [pressProgress, setPressProgress] = useState(0);
   const [isPressing, setIsPressing] = useState(false);
   const pressTimer = useRef<any>(null);
+
+  const handleSOS = async (type: 'Medical' | 'Security') => {
+    // 1. Local state update
+    triggerSOS(type);
+    
+    // 2. Cloud sync for staff dashboard consumption
+    await syncSOSToCloud({
+       userId: 'google-user-123', // simulation
+       location: 'Section 104, Row N',
+       type,
+       stadiumId: activeStadiumId || 'unknown'
+    });
+  };
 
   // Long press logic
   const startPress = (e: React.MouseEvent | React.TouchEvent) => {
@@ -88,13 +102,18 @@ export default function SOSSystem() {
                 onTouchStart={startPress}
                 onTouchEnd={endPress}
                 onContextMenu={(e) => e.preventDefault()}
+                onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') startPress(e as any); }}
+                onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') endPress(); }}
+                role="button"
+                aria-label="Hold for 2 seconds to trigger emergency SOS"
+                aria-pressed={isPressing}
                 className="relative w-16 h-16 md:w-20 md:h-20 bg-red-600 hover:bg-red-600 rounded-full shadow-[0_0_30px_rgba(220,38,38,0.5)] flex flex-col items-center justify-center gap-0.5 border-4 border-white/20 transition-transform active:scale-90"
               >
-                <AlertCircle className="text-white" size={28} strokeWidth={3} />
+                <AlertCircle className="text-white" size={28} strokeWidth={3} aria-hidden="true" />
                 <span className="text-[10px] font-black text-white uppercase tracking-tighter">Hold SOS</span>
                 
                 {/* Circular Progress Overlay */}
-                <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
+                <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" aria-hidden="true">
                   <circle
                     cx="50%"
                     cy="50%"
@@ -110,7 +129,7 @@ export default function SOSSystem() {
               </button>
               
               {/* Tooltip */}
-              <div className="absolute bottom-full right-0 mb-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-right">
+              <div className="absolute bottom-full right-0 mb-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48 text-right" aria-hidden="true">
                 <div className="bg-slate-900 border border-white/10 p-2 rounded-xl shadow-xl">
                   <p className="text-[10px] text-slate-300 font-bold leading-tight">Emergency? Hold for 2s to alert Command Center</p>
                 </div>
@@ -127,6 +146,9 @@ export default function SOSSystem() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sos-modal-title"
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
           >
             <motion.div
@@ -138,25 +160,27 @@ export default function SOSSystem() {
               
               <button 
                 onClick={() => setShowModal(false)}
+                aria-label="Close emergency selection"
                 className="absolute top-6 right-6 text-slate-500 hover:text-white transition"
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
 
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-4">
+                <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-4" aria-hidden="true">
                   <AlertTriangle size={36} strokeWidth={2.5} />
                 </div>
-                <h2 className="text-xl font-black text-white tracking-tight">Emergency Assistance</h2>
+                <h2 id="sos-modal-title" className="text-xl font-black text-white tracking-tight">Emergency Assistance</h2>
                 <p className="text-sm text-slate-400 mt-2 font-medium">Select type of help needed at your seat</p>
               </div>
 
               <div className="space-y-4">
                 <button
-                  onClick={() => { triggerSOS('Medical'); setShowModal(false); }}
+                  onClick={() => { handleSOS('Medical'); setShowModal(false); }}
+                  aria-label="Request Medical Assistance"
                   className="w-full flex items-center gap-4 p-5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-3xl transition group"
                 >
-                  <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition" aria-hidden="true">
                     <Stethoscope size={24} />
                   </div>
                   <div className="text-left">
@@ -166,10 +190,11 @@ export default function SOSSystem() {
                 </button>
 
                 <button
-                  onClick={() => { triggerSOS('Security'); setShowModal(false); }}
+                  onClick={() => { handleSOS('Security'); setShowModal(false); }}
+                  aria-label="Request Security Assistance"
                   className="w-full flex items-center gap-4 p-5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-3xl transition group"
                 >
-                  <div className="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition">
+                  <div className="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition" aria-hidden="true">
                     <ShieldAlert size={24} />
                   </div>
                   <div className="text-left">
@@ -192,22 +217,25 @@ export default function SOSSystem() {
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
+            role="region"
+            aria-live="assertive"
+            aria-label="Emergency Status Tracker"
             className="fixed bottom-4 left-4 right-4 z-[100] md:bottom-8 md:max-w-md md:left-auto md:right-8"
           >
             <div className="bg-slate-900 border-2 border-red-500 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden">
                {/* Animated Background Pulse */}
-               <div className="absolute inset-0 bg-red-500/5 animate-pulse"></div>
+               <div className="absolute inset-0 bg-red-500/5 animate-pulse" aria-hidden="true"></div>
                
                <div className="relative z-10">
                  <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white animate-bounce">
+                     <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white animate-bounce" aria-hidden="true">
                         <AlertCircle size={20} />
                      </div>
                      <div>
                        <h3 className="font-black text-white leading-tight uppercase tracking-tight text-sm">{sosType} Emergency Active</h3>
                        <div className="flex items-center gap-2 mt-1">
-                         <MapPin size={12} className="text-slate-500" />
+                         <MapPin size={12} className="text-slate-500" aria-hidden="true" />
                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">VIP SEC 104 • SEAT 12</span>
                        </div>
                      </div>
@@ -225,9 +253,9 @@ export default function SOSSystem() {
                     <div className="bg-slate-950 p-4 rounded-2xl flex items-center justify-between border border-white/5">
                        <span className="text-xs font-bold text-slate-300">Status: {sosStatus}</span>
                        {sosStatus === 'Dispatching' || sosStatus === 'Dispatched' ? (
-                         <Loader2 className="text-rose-500 animate-spin" size={16} />
+                         <Loader2 className="text-rose-500 animate-spin" size={16} aria-label="Loading" />
                        ) : (
-                         <CheckCircle2 className="text-emerald-500" size={16} />
+                         <CheckCircle2 className="text-emerald-500" size={16} aria-label="Completed" />
                        )}
                     </div>
 
@@ -239,7 +267,7 @@ export default function SOSSystem() {
                        />
                     </div>
                     
-                    <p className="text-[10px] text-center text-slate-500 font-medium">Please remain at your seat. Our response team is tracking your beacon.</p>
+                    <p className="text-[10px] text-center text-slate-500 font-medium font-bold uppercase tracking-widest">Please remain at your seat. Our response team is tracking your beacon.</p>
                  </div>
                </div>
             </div>

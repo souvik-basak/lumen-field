@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { STADIUM_REGISTRY } from '../../services/mockVenueData';
+import AuthWall from '../shared/AuthWall';
 
 export default function Parking() {
   const { waitTimes, activeStadiumId, carLocation, setCarLocation } = useVenueStore();
@@ -66,84 +67,89 @@ export default function Parking() {
         <div className="lg:col-span-7 space-y-8">
            
            {/* Section 1: Find My Car */}
-           <motion.section variants={itemVariants} className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-[2.5rem] border border-white/5 p-6 md:p-8 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl"></div>
-              
-              <div className="flex justify-between items-start mb-8 relative z-10">
-                 <div>
-                    <h3 className="text-xl font-black text-white">Find My Car</h3>
-                    <p className="text-sm font-medium text-slate-400 mt-1">Never lose your vehicle in the crowd</p>
-                 </div>
-                 <div className="bg-emerald-500/20 p-3 rounded-2xl border border-emerald-500/30">
-                    <Search className="text-emerald-400" size={24} />
-                 </div>
-              </div>
+           <AuthWall 
+             title="Vehicle Locator Locked" 
+             description="Sign in to save your parking spot and navigate back to your car after the match."
+           >
+             <motion.section variants={itemVariants} className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-[2.5rem] border border-white/5 p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl"></div>
+                
+                <div className="flex justify-between items-start mb-8 relative z-10">
+                   <div>
+                      <h3 className="text-xl font-black text-white">Find My Car</h3>
+                      <p className="text-sm font-medium text-slate-400 mt-1">Never lose your vehicle in the crowd</p>
+                   </div>
+                   <div className="bg-emerald-500/20 p-3 rounded-2xl border border-emerald-500/30">
+                      <Search className="text-emerald-400" size={24} />
+                   </div>
+                </div>
 
-              <AnimatePresence mode="wait">
-                 {carLocation ? (
-                   <motion.div 
-                    key="saved"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-6 flex items-center justify-between relative z-10"
-                   >
-                      <div className="flex items-center gap-6">
-                         <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg shadow-emerald-500/20">
-                            {carLocation.section}
-                         </div>
-                         <div>
-                            <p className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Saved Location</p>
-                            <h4 className="text-2xl font-black text-white">Level {carLocation.level}</h4>
-                            <p className="text-sm font-bold text-slate-400 mt-1 flex items-center gap-1">
-                               <MapPin size={14} /> VIP Parking Wing
-                            </p>
-                         </div>
-                      </div>
-                      <button 
-                        onClick={() => setCarLocation(null)}
-                        className="text-xs font-bold text-slate-500 hover:text-white transition uppercase tracking-widest"
-                      >
-                        Reset
-                      </button>
-                   </motion.div>
-                 ) : (
-                   <motion.div 
-                    key="input"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="grid grid-cols-2 gap-4 relative z-10"
-                   >
-                      <div className="bg-slate-900 border border-white/5 rounded-2xl p-4">
-                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Section</label>
-                         <input 
-                          type="text" 
-                          placeholder="e.g. B4"
-                          value={tempSection}
-                          onChange={(e) => setTempSection(e.target.value)}
-                          className="w-full bg-transparent text-white font-black text-lg focus:outline-none mt-1"
-                         />
-                      </div>
-                      <div className="bg-slate-900 border border-white/5 rounded-2xl p-4">
-                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Level</label>
-                         <input 
-                          type="text" 
-                          placeholder="e.g. L2"
-                          value={tempLevel}
-                          onChange={(e) => setTempLevel(e.target.value)}
-                          className="w-full bg-transparent text-white font-black text-lg focus:outline-none mt-1"
-                         />
-                      </div>
-                      <button 
-                        onClick={saveLocation}
-                        disabled={isSaving}
-                        className="col-span-2 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition shadow-xl mt-2 flex items-center justify-center gap-2"
-                      >
-                        {isSaving ? 'Verifying...' : 'Save Current Spot'}
-                      </button>
-                   </motion.div>
-                 )}
-              </AnimatePresence>
-           </motion.section>
+                <AnimatePresence mode="wait">
+                   {carLocation ? (
+                     <motion.div 
+                      key="saved"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-6 flex items-center justify-between relative z-10"
+                     >
+                        <div className="flex items-center gap-6">
+                           <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg shadow-emerald-500/20">
+                              {carLocation.section}
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Saved Location</p>
+                              <h4 className="text-2xl font-black text-white">Level {carLocation.level}</h4>
+                              <p className="text-sm font-bold text-slate-400 mt-1 flex items-center gap-1">
+                                 <MapPin size={14} /> VIP Parking Wing
+                              </p>
+                           </div>
+                        </div>
+                        <button 
+                          onClick={() => setCarLocation(null)}
+                          className="text-xs font-bold text-slate-500 hover:text-white transition uppercase tracking-widest"
+                        >
+                          Reset
+                        </button>
+                     </motion.div>
+                   ) : (
+                     <motion.div 
+                      key="input"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="grid grid-cols-2 gap-4 relative z-10"
+                     >
+                        <div className="bg-slate-900 border border-white/5 rounded-2xl p-4">
+                           <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Section</label>
+                           <input 
+                            type="text" 
+                            placeholder="e.g. B4"
+                            value={tempSection}
+                            onChange={(e) => setTempSection(e.target.value)}
+                            className="w-full bg-transparent text-white font-black text-lg focus:outline-none mt-1"
+                           />
+                        </div>
+                        <div className="bg-slate-900 border border-white/5 rounded-2xl p-4">
+                           <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Level</label>
+                           <input 
+                            type="text" 
+                            placeholder="e.g. L2"
+                            value={tempLevel}
+                            onChange={(e) => setTempLevel(e.target.value)}
+                            className="w-full bg-transparent text-white font-black text-lg focus:outline-none mt-1"
+                           />
+                        </div>
+                        <button 
+                          onClick={saveLocation}
+                          disabled={isSaving}
+                          className="col-span-2 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl transition shadow-xl mt-2 flex items-center justify-center gap-2"
+                        >
+                          {isSaving ? 'Verifying...' : 'Save Current Spot'}
+                        </button>
+                     </motion.div>
+                   )}
+                </AnimatePresence>
+             </motion.section>
+           </AuthWall>
 
            {/* Section 2: Lot Occupancy */}
            <motion.section variants={itemVariants} className="glass-dark rounded-[2.5rem] border border-white/5 p-6 md:p-8">
@@ -225,21 +231,26 @@ export default function Parking() {
            </motion.section>
 
            {/* Security Verification */}
-           <motion.section variants={itemVariants} className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-[2.5rem] p-8 shadow-xl text-white relative overflow-hidden">
-              <div className="absolute right-0 bottom-0 p-4 opacity-10">
-                 <ShieldCheck size={120} />
-              </div>
-              <div className="relative z-10">
-                 <ShieldCheck className="mb-4" size={32} />
-                 <h3 className="text-xl font-black mb-2 leading-tight">Secure Parking Pass</h3>
-                 <p className="text-sm font-medium text-emerald-100 opacity-80 leading-relaxed mb-6">
-                    Verified Digital Ticket #4412-A. Present this QR at the exit for automatic boom-barrier opening.
-                 </p>
-                 <button className="bg-white text-emerald-700 font-black py-3 px-6 rounded-xl hover:scale-105 active:scale-95 transition shadow-lg flex items-center gap-2">
-                    Show QR <ChevronRight size={18} />
-                 </button>
-              </div>
-           </motion.section>
+           <AuthWall 
+             title="Parking Pass Hidden" 
+             description="A digital parking pass is required for automatic exit verification."
+           >
+             <motion.section variants={itemVariants} className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-[2.5rem] p-8 shadow-xl text-white relative overflow-hidden">
+                <div className="absolute right-0 bottom-0 p-4 opacity-10">
+                   <ShieldCheck size={120} />
+                </div>
+                <div className="relative z-10">
+                   <ShieldCheck className="mb-4" size={32} />
+                   <h3 className="text-xl font-black mb-2 leading-tight">Secure Parking Pass</h3>
+                   <p className="text-sm font-medium text-emerald-100 opacity-80 leading-relaxed mb-6">
+                      Verified Digital Ticket #4412-A. Present this QR at the exit for automatic boom-barrier opening.
+                   </p>
+                   <button className="bg-white text-emerald-700 font-black py-3 px-6 rounded-xl hover:scale-105 active:scale-95 transition shadow-lg flex items-center gap-2">
+                      Show QR <ChevronRight size={18} />
+                   </button>
+                </div>
+             </motion.section>
+           </AuthWall>
         </div>
 
       </div>

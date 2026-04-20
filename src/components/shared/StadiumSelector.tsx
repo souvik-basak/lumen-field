@@ -4,7 +4,7 @@ import { Search, Navigation, Building2 } from 'lucide-react';
 import { useVenueStore } from '../../store/useVenueStore';
 
 const POPULAR_CITIES: { id: string; name: string; stadium: string; unavailable?: boolean }[] = [
-  { id: 'city_kolkata', name: 'Kolkata', stadium: 'Lumen Field' },
+  { id: 'city_kolkata', name: 'Kolkata', stadium: 'Saltlake Stadium' },
   { id: 'city_mumbai', name: 'Mumbai', stadium: 'Mumbai Football Arena' },
   { id: 'city_bengaluru', name: 'Bengaluru', stadium: 'Kanteerava Stadium' },
   { id: 'city_delhi', name: 'Delhi', stadium: 'JLN Stadium' },
@@ -34,6 +34,9 @@ export default function StadiumSelector() {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="stadium-selector-title"
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl"
     >
       <motion.div 
@@ -43,11 +46,13 @@ export default function StadiumSelector() {
       >
         {/* Search Header */}
         <div className="p-6 md:p-8 border-b border-white/5">
+          <h2 id="stadium-selector-title" className="sr-only">Select your stadium</h2>
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-sky-400 transition-colors" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-sky-400 transition-colors" size={20} aria-hidden="true" />
             <input 
               type="text"
               placeholder="Search for your city or stadium..."
+              aria-label="Search for your city or stadium"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-slate-800 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition"
@@ -57,9 +62,10 @@ export default function StadiumSelector() {
           <button 
             onClick={handleDetect}
             disabled={detecting}
+            aria-busy={detecting}
             className="mt-4 flex items-center gap-2 text-rose-500 hover:text-rose-400 font-bold text-sm transition group disabled:opacity-50"
           >
-            <Navigation size={16} className={detecting ? 'animate-spin' : 'group-hover:scale-110 transition'} />
+            <Navigation size={16} className={detecting ? 'animate-spin' : 'group-hover:scale-110 transition'} aria-hidden="true" />
             {detecting ? 'Detecting location...' : 'Detect my location'}
           </button>
         </div>

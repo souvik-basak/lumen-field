@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { startMockVenueEngine } from './services/mockVenueData';
 import { initGoogleServices } from './services/googleIntegrations';
+import { firebaseAuth } from './services/firebaseAuthMock';
+import { useVenueStore } from './store/useVenueStore';
 
 // Layouts
 import FanLayout from './components/fan/FanLayout';
@@ -21,12 +23,20 @@ import OpsDashboard from './components/staff/OpsDashboard';
 import StaffDispatch from './components/staff/StaffDispatch';
 import SecurityFeeds from './components/staff/SecurityFeeds';
 import CrowdControl from './components/staff/CrowdControl';
+import ProtectedRoute from './components/shared/ProtectedRoute';
 
 function App() {
   useEffect(() => {
     // Initialize mock services on mount
     initGoogleServices();
     startMockVenueEngine();
+
+    // Global Auth Listener
+    const unsubscribe = firebaseAuth.onAuthStateChanged((user) => {
+      useVenueStore.getState().setUser(user);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -43,8 +53,15 @@ function App() {
           <Route path="zone" element={<FanZone />} />
         </Route>
 
-        {/* Staff Dashboard Routes */}
-        <Route path="/staff" element={<StaffLayout />}>
+        {/* Staff Dashboard Routes - SECURED */}
+        <Route 
+          path="/staff" 
+          element={
+            <ProtectedRoute requireAdmin>
+              <StaffLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<OpsDashboard />} />
           <Route path="crowd-control" element={<CrowdControl />} />
           <Route path="dispatch" element={<StaffDispatch />} />

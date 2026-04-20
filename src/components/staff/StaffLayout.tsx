@@ -4,6 +4,7 @@ import { Shield, Home, Menu, X, LayoutDashboard, Users, Truck, Camera, AlertOcta
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { useVenueStore } from '../../store/useVenueStore';
+import CloudWatcher from './CloudWatcher';
 
 const NAV_ITEMS = [
   { to: '/staff', label: 'Command Center', icon: LayoutDashboard, color: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20', glow: 'shadow-[0_0_20px_rgba(14,165,233,0.15)]', end: true },
@@ -21,6 +22,7 @@ export default function StaffLayout() {
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
+      <CloudWatcher />
       <Toaster 
         position="bottom-right" 
         toastOptions={{

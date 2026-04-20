@@ -11,6 +11,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { STADIUM_REGISTRY } from '../../services/mockVenueData';
+import AuthWall from '../shared/AuthWall';
 
 export default function Transit() {
   const { waitTimes, activeStadiumId, matchMinute, transitPassBalance, topUpPass } = useVenueStore();
@@ -57,18 +58,23 @@ export default function Transit() {
           </p>
         </div>
         
-        <div className="glass-dark border border-white/10 p-4 rounded-3xl flex items-center gap-6 shadow-xl">
-           <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Digital Pass</span>
-              <span className="text-xl font-black text-white">₹{transitPassBalance.toFixed(2)}</span>
-           </div>
-           <button 
-            onClick={() => topUpPass(500)}
-            className="bg-sky-500 hover:bg-sky-400 text-white p-2 rounded-xl transition shadow-lg shadow-sky-500/20 active:scale-95"
-           >
-             <TrendingUp size={18} />
-           </button>
-        </div>
+        <AuthWall 
+          title="Transit Balance Hidden" 
+          description="Log in to view your Digital Pass balance and top-up your card."
+        >
+          <div className="glass-dark border border-white/10 p-4 rounded-3xl flex items-center gap-6 shadow-xl">
+             <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Digital Pass</span>
+                <span className="text-xl font-black text-white">₹{transitPassBalance.toFixed(2)}</span>
+             </div>
+             <button 
+              onClick={() => topUpPass(500)}
+              className="bg-sky-500 hover:bg-sky-400 text-white p-2 rounded-xl transition shadow-lg shadow-sky-500/20 active:scale-95"
+             >
+               <TrendingUp size={18} />
+             </button>
+          </div>
+        </AuthWall>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -161,47 +167,52 @@ export default function Transit() {
         {/* Right Column: Digital Wallet & Tap-to-Pay */}
         <div className="lg:col-span-4 space-y-8">
            
-           <motion.section variants={itemVariants} className="bg-gradient-to-br from-sky-600 to-violet-700 rounded-[2.5rem] p-1 shadow-2xl">
-              <div className="bg-slate-900/90 rounded-[2.3rem] p-8 backdrop-blur-xl relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Train size={120} />
-                 </div>
-                 
-                 <h3 className="text-xs uppercase font-black tracking-widest text-sky-400 mb-6 flex items-center gap-2">
-                    <CreditCard size={14} /> Smart Pass
-                 </h3>
+           <AuthWall 
+             title="Smart Pass Locked" 
+             description="Verified transit identity is required for Tap-to-Ride functionality."
+           >
+             <motion.section variants={itemVariants} className="bg-gradient-to-br from-sky-600 to-violet-700 rounded-[2.5rem] p-1 shadow-2xl">
+                <div className="bg-slate-900/90 rounded-[2.3rem] p-8 backdrop-blur-xl relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-8 opacity-10">
+                      <Train size={120} />
+                   </div>
+                   
+                   <h3 className="text-xs uppercase font-black tracking-widest text-sky-400 mb-6 flex items-center gap-2">
+                      <CreditCard size={14} /> Smart Pass
+                   </h3>
 
-                 <div className="space-y-6 mb-10">
-                    <div>
-                       <p className="text-sm font-bold text-slate-400">Cardholder</p>
-                       <p className="text-xl font-black text-white">Elite Fan #098</p>
-                    </div>
-                    <div>
-                       <p className="text-sm font-bold text-slate-400">Network</p>
-                       <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                          <p className="text-lg font-black text-white uppercase">{stadium.transit.name} Interconnected</p>
-                       </div>
-                    </div>
-                 </div>
+                   <div className="space-y-6 mb-10">
+                      <div>
+                         <p className="text-sm font-bold text-slate-400">Cardholder</p>
+                         <p className="text-xl font-black text-white">Elite Fan #098</p>
+                      </div>
+                      <div>
+                         <p className="text-sm font-bold text-slate-400">Network</p>
+                         <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <p className="text-lg font-black text-white uppercase">{stadium.transit.name} Interconnected</p>
+                         </div>
+                      </div>
+                   </div>
 
-                 <button 
-                  disabled={isTapping}
-                  onClick={handleTap}
-                  className={`w-full py-6 rounded-3xl font-black text-lg transition-all relative overflow-hidden flex items-center justify-center gap-3 border-b-4 border-slate-950 ${isTapping ? 'bg-emerald-500' : 'bg-white text-slate-900 hover:bg-sky-100 hover:scale-105 active:scale-95 shadow-xl shadow-white/10'}`}
-                 >
-                    {isTapping ? (
-                      <>
-                        <CheckCircle2 size={24} /> Valid Entry
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight size={24} /> Tap to Ride
-                      </>
-                    )}
-                 </button>
-              </div>
-           </motion.section>
+                   <button 
+                    disabled={isTapping}
+                    onClick={handleTap}
+                    className={`w-full py-6 rounded-3xl font-black text-lg transition-all relative overflow-hidden flex items-center justify-center gap-3 border-b-4 border-slate-950 ${isTapping ? 'bg-emerald-500' : 'bg-white text-slate-900 hover:bg-sky-100 hover:scale-105 active:scale-95 shadow-xl shadow-white/10'}`}
+                   >
+                      {isTapping ? (
+                        <>
+                          <CheckCircle2 size={24} /> Valid Entry
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight size={24} /> Tap to Ride
+                        </>
+                      )}
+                   </button>
+                </div>
+             </motion.section>
+           </AuthWall>
 
            <motion.section variants={itemVariants} className="glass-dark rounded-[2.5rem] p-8 border border-white/5">
               <h3 className="text-lg font-black text-white mb-6">Recent Rides</h3>

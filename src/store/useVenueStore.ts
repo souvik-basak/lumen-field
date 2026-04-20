@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { GoogleUser } from '../services/firebaseAuthMock';
 
 export type WaitTime = {
   id: string;
@@ -63,6 +64,17 @@ export interface Stadium {
   capacity: number;
 }
 
+export type Order = {
+  id: string;
+  items: CartItem[];
+  total: number;
+  status: 'Pending' | 'Preparing' | 'Dispatched' | 'Delivered';
+  location: string;
+  stadiumId: string;
+  customerName?: string;
+  timestamp: any;
+};
+
 interface VenueState {
   activeStadiumId: string | null;
   matchStatus: 'warmup' | 'live' | 'halftime' | 'finished';
@@ -73,15 +85,22 @@ interface VenueState {
   liveScore: LiveScore;
   matchCommentary: CommentaryEntry[];
   cart: CartItem[];
+  stadiums: Record<string, Stadium>;
+  isHydrated: boolean;
+  cloudLoading: boolean;
   
   sosActive: boolean;
   sosType: 'Medical' | 'Security' | null;
   sosStatus: 'Dispatching' | 'Dispatched' | 'On-Site' | 'Resolved' | null;
+  activeSosId: string | null;
   
   transitPassBalance: number;
   carLocation: { section: string; level: string } | null;
+  user: GoogleUser | null;
+  orders: Order[];
   
   setStadium: (id: string) => void;
+  setUser: (user: GoogleUser | null) => void;
   setWaitTimes: (waitTimes: WaitTime[]) => void;
   setGameEvents: (events: GameEvent[]) => void;
   addAlert: (alert: string) => void;
@@ -92,7 +111,7 @@ interface VenueState {
   resetMatch: () => void;
   resolveZoneCongestion: (zoneId: string) => void;
   
-  triggerSOS: (type: 'Medical' | 'Security') => void;
+  triggerSOS: (type: 'Medical' | 'Security', cloudId?: string) => void;
   setSOSStatus: (status: VenueState['sosStatus']) => void;
   cancelSOS: () => void;
   
@@ -102,6 +121,10 @@ interface VenueState {
   addToCart: (item: Product) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
+  setStadiums: (stadiums: Record<string, Stadium>) => void;
+  setCloudLoading: (loading: boolean) => void;
+  setOrders: (orders: Order[]) => void;
+  updateOrderStatus: (orderId: string, status: Order['status']) => void;
 }
 
 export const useVenueStore = create<VenueState>((set) => ({
@@ -117,10 +140,17 @@ export const useVenueStore = create<VenueState>((set) => ({
   sosActive: false,
   sosType: null,
   sosStatus: null,
+  activeSosId: null,
   transitPassBalance: 450, // Initial balance
   carLocation: null,
+  user: null,
+  stadiums: {},
+  isHydrated: false,
+  cloudLoading: false,
+  orders: [],
   
   setStadium: (id) => set({ activeStadiumId: id }),
+  setUser: (user) => set({ user }),
   setWaitTimes: (waitTimes) => set({ waitTimes }),
   setGameEvents: (gameEvents) => set({ gameEvents }),
   addAlert: (alert) => set((state) => ({ alerts: [alert, ...state.alerts].slice(0, 10) })),
@@ -128,23 +158,30 @@ export const useVenueStore = create<VenueState>((set) => ({
   setMatchMinute: (matchMinute) => set({ matchMinute }),
   addCommentary: (entry) => set((state) => ({ matchCommentary: [entry, ...state.matchCommentary].slice(0, 50) })),
   
-  triggerSOS: (type) => set({ sosActive: true, sosType: type, sosStatus: 'Dispatching' }),
+  triggerSOS: (type, cloudId) => set({ sosActive: true, sosType: type, sosStatus: 'Dispatching', activeSosId: cloudId || null }),
   setSOSStatus: (status) => set({ sosStatus: status }),
-  cancelSOS: () => set({ sosActive: false, sosType: null, sosStatus: null }),
+  cancelSOS: () => set({ sosActive: false, sosType: null, sosStatus: null, activeSosId: null }),
   
   topUpPass: (amount) => set((state) => ({ transitPassBalance: state.transitPassBalance + amount })),
   setCarLocation: (location) => set({ carLocation: location }),
   
-  resetMatch: () => set((state) => ({
-    matchStatus: 'warmup',
-    matchMinute: 0,
-    liveScore: { ...state.liveScore, scoreA: 0, scoreB: 0, clock: '00:00', period: 'Warmup' },
-    matchCommentary: [],
-    alerts: [],
-    sosActive: false,
-    sosType: null,
-    sosStatus: null,
-  })),
+  resetMatch: () => {
+    const { activeStadiumId } = useVenueStore.getState();
+    set((state) => ({
+      matchStatus: 'warmup',
+      matchMinute: 0,
+      liveScore: { ...state.liveScore, scoreA: 0, scoreB: 0, clock: '00:00', period: 'Warmup' },
+      matchCommentary: [],
+      alerts: [],
+      sosActive: false,
+      sosType: null,
+      sosStatus: null,
+    }));
+    
+    // Explicitly notify the engine to reset this stadium's minute
+    // We can do this by dispatching a custom event or adding a global reset signal
+    window.dispatchEvent(new CustomEvent('match-reset', { detail: { stadiumId: activeStadiumId } }));
+  },
 
   resolveZoneCongestion: (zoneId) => set((state) => ({
     waitTimes: state.waitTimes.map((w) => 
@@ -175,4 +212,10 @@ export const useVenueStore = create<VenueState>((set) => ({
   }),
   
   clearCart: () => set({ cart: [] }),
+  setStadiums: (stadiums) => set({ stadiums, isHydrated: true }),
+  setCloudLoading: (cloudLoading) => set({ cloudLoading }),
+  setOrders: (orders) => set({ orders }),
+  updateOrderStatus: (orderId, status) => set((state) => ({
+    orders: state.orders.map(o => o.id === orderId ? { ...o, status } : o)
+  })),
 }));
