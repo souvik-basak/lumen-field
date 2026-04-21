@@ -1,3 +1,4 @@
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from './googleIntegrations';
 
 // Local synchronization fallback for multi-tab demos when cloud quotas are hit

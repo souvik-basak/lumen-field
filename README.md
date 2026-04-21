@@ -15,40 +15,55 @@ The system is engineered as a seamless, dual-interface ecosystem governed by a c
 
 ### 1️⃣ The Fan Experience Dashboard
 A hyper-localized portal bridging the gap between fans and stadium infrastructure.
-*   **Wait-Time Topography:** Dynamically fetches and sorts simulated congestion for Concessions, Merchandise, Exits, and Restrooms to help fans avoid standing in line.
+*   **Wait-Time Topography:** Dynamically fetches and sorts simulated congestion for Concessions, Merchandise, Exits, and Restrooms.
 *   **Smart Transit Engine:** Simulates real-time Light Rail departure schedules so fans can plot their exit strategy effectively.
-*   **Contextual AI Prompts:** Ingests live match-minute data to dispatch context-aware alerts (e.g. *"Halftime is 5 mins away! Pre-order drinks now and skip the 20 min queue."*).
+*   **Contextual AI Prompts:** Ingests live match-minute data to dispatch context-aware alerts.
 *   **SOS Emergency Beacons:** A localized panic button that securely drops a pin containing the user's explicit seating coordinates directly to the command center.
+*   **Connected Concessions:** Real-time food ordering with "In-Seat Delivery" status updates synced from the kitchen.
 
 ### 2️⃣ The Tactical Command Center (Ops)
 A formidable, high-contrast dashboard empowering security directors to marshal crowd density across a massive 70,000-seat venue.
-*   **Kanban Dispatch Grid:** Real-time ticketing layout sorting SOS requests directly from the fan dashboard, allowing staff to deploy specific unit rosters (Medics, Tactical, Security).
-*   **Geospatial Intelligence Map:** A heat-mapping system directly connected to the simulated crowd API, indicating structural chokepoints in real time.
-*   **Interactive CCTV Grid (`SecurityFeeds`)**:
-    *   **Simulated PTZ Joysticks:** CSS-Manipulated camera panning to locally examine angles.
-    *   **AI Threat Modeling:** Injected `framer-motion` bounding boxes that simulate live computer vision tracking over massive public crowds.
-    *   **Aerial Drone Overrides:** Hot-swapping primary feeds to massive 4K drone flyovers during critical alerts.
+*   **Live Order Dispatch:** Real-time kitchen display system (KDS) showing incoming fan orders and dispatching runners.
+*   **Incident Response:** Unified SOS alert banner with "Resolve & Sync" capabilities.
+*   **Geospatial Intelligence Map:** A heat-mapping system indicating structural chokepoints in real time.
+*   **Security Feeds**: AI-powered CCTV grid with simulated threat detection.
+
+---
+
+## 🔒 Security & Privacy
+
+*   **Role-Based Access Control (RBAC):** Admin-only access to `/staff` routes with automatic redirection for unauthorized fans.
+*   **Identity Required (AuthWall):** Premium features like the "VIP Club Pass," "Smart Transit Wallet," and "Private Parking Locator" are protected by a high-fidelity visual blur until the user signs in.
+*   **Local Admin Access:** For hackathon evaluation, a local admin account is pre-configured.
+
+### 🔑 Reviewer Credentials
+- **Account Type:** Venue Administrator
+- **Email:** `admin@stadium.com`
+- **Password:** `admin`
 
 ---
 
 ## 🛠️ The Tech Stack
 
 *   **Core:** React 19 + TypeScript + Vite
-*   **Styling & UI:** TailwindCSS, Tailwind-Merge, clsx
-*   **Animation & Micro-interactions:** Framer Motion (glassmorphism UI patterns)
-*   **Icons:** Lucide-React
-*   **State Machine:** Zustand (Simulation core & Global State handling)
-*   **Deployment & Edge Hosting:** Containerized via Docker & Deployed fully on **Google Cloud Run**
+*   **Cloud Backend:** Google Firebase (Firestore/Auth)
+*   **Real-time Sync:** Firestore + BroadcastChannel (Hybrid local/cloud sync core)
+*   **Styling & UI:** TailwindCSS, Framer Motion (Glassmorphism patterns)
+*   **Deployment:** Containerized via Docker & Deployed on **Google Cloud Run**
 
 ---
 
-## 🚀 Future Roadmap
+## 🚀 Deployment (Cloud Run)
 
-This MVP establishes the foundational routing and state logic. Moving forward, the platform is targeted to adopt:
-- [ ] **WebAR Wayfinding Lens:** Augmented reality camera overlays painting turn-by-turn routing paths on the stadium floor.
-- [ ] **Predictive AI Modeling:** Ingesting historical crowd data to predict and reroute jams 15 mins *before* they manifest.
-- [ ] **In-Seat Drone Deliveries:** UberEats-style ordering dispatched algorithmically directly to specific stadium rows.
-- [ ] **Blockchain NFT Ticketing:** Rotating 10-second cryptographic QR codes to completely eliminate physical ticket scalping.
+The application is containerized for standard OCI environments.
+1. **Build Container:**
+   ```bash
+   gcloud builds submit --tag gcr.io/[PROJECT_ID]/lumen-field
+   ```
+2. **Deploy Service:**
+   ```bash
+   gcloud run deploy lumen-field --image gcr.io/[PROJECT_ID]/lumen-field --platform managed --region us-central1 --allow-unauthenticated
+   ```
 
 ---
 
@@ -60,11 +75,13 @@ This MVP establishes the foundational routing and state logic. Moving forward, t
    npm install
    ```
 3. **Set up the Environment:**
-   Create a `.env` file at the root and pass your Google Maps API key (if applicable to active modules):
+   Create a `.env` file at the root:
    ```text
-   VITE_GOOGLE_MAPS_API_KEY=your_key_here
+   VITE_GOOGLE_MAPS_API_KEY=your_key
+   VITE_FIREBASE_API_KEY=your_key
+   VITE_FIREBASE_PROJECT_ID=lumen-field
    ```
-4. **Boot the Vite Engine:**
+4. **Boot the Engine:**
    ```bash
    npm run dev
    ```

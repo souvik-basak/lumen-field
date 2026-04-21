@@ -161,6 +161,8 @@ export default function Concessions() {
              addToCart={addToCart}
              clearCart={clearCart}
              closeCart={() => {}}
+             activeTab={activeTab}
+             activeStadiumId={activeStadiumId}
            />
         </div>
 
@@ -181,6 +183,8 @@ export default function Concessions() {
                  addToCart={addToCart}
                  clearCart={clearCart}
                  closeCart={() => setIsCartOpen(false)}
+                 activeTab={activeTab}
+                 activeStadiumId={activeStadiumId}
                />
             </motion.div>
           )}
@@ -191,7 +195,7 @@ export default function Concessions() {
   );
 }
 
-function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart, clearCart, closeCart, activeTab }: any) {
+function CartContent({ cart, cartTotal, cartItemCount, removeFromCart, addToCart, clearCart, closeCart, activeTab, activeStadiumId }: any) {
   const deliveryFee = activeTab === 'in-seat' ? 50 : 0;
   const finalTotal = cartTotal + (cartItemCount > 0 ? deliveryFee : 0);
 
